@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [ "$(which go)" = "" ]; then 
+	echo "go must be installed to use this gh extension"
+	exit 1
+fi
+
+exe="cmd.out"
+extensionPath="$(dirname $(realpath $0))"
+
+cd "${extensionPath}" > /dev/null
+go build -o "${exe}"
+cd - > /dev/null
+
+exec "${extensionPath}/${exe}" "$@"
