@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/cli/safeexec"
 	"github.com/gdamore/tcell/v2"
@@ -15,6 +16,8 @@ import (
 type screensaverOpts struct {
 	Screensaver string
 	Repository  string
+	Style       tcell.Style
+	Screen      tcell.Screen
 }
 
 func rootCmd() *cobra.Command {
@@ -60,20 +63,56 @@ func main() {
 	}
 }
 
-func runScreensaver(opts screensaverOpts) error {
-	// TODO reset terminal
-	style := tcell.StyleDefault
+type Screensaver interface {
+	Initialize(tcell.Screen, tcell.Style) error
+	Update() error
+}
 
-	s, err := tcell.NewScreen()
+// TODO write a basic screensaver
+
+func runScreensaver(opts screensaverOpts) error {
+	style := tcell.StyleDefault
+	opts.Style = style
+
+	screen, err := tcell.NewScreen()
 	if err != nil {
 		return err
 	}
-	if err = s.Init(); err != nil {
+	if err = screen.Init(); err != nil {
 		return err
 	}
-	s.SetStyle(style)
+	screen.SetStyle(style)
 
-	// TODO do stuff
+	opts.Screen = screen
+
+	quit := make(chan struct{})
+	go func() {
+		for {
+			ev := screen.PollEvent()
+			switch ev.(type) {
+			case *tcell.EventKey:
+				close(quit)
+				return
+			case *tcell.EventResize:
+				screen.Sync()
+			}
+		}
+	}()
+
+loop:
+	for {
+		select {
+		case <-quit:
+			break loop
+		case <-time.After(time.Millisecond * 100):
+		}
+
+		screen.Clear()
+		// TODO update step, call chosen screensaver's update method
+		screen.Show()
+	}
+
+	screen.Fini()
 
 	return nil
 }
