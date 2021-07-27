@@ -10,6 +10,7 @@ import (
 
 	"github.com/cli/safeexec"
 	"github.com/gdamore/tcell/v2"
+	"github.com/mattn/go-runewidth"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +19,7 @@ type screensaverOpts struct {
 	Repository  string
 	Style       tcell.Style
 	Screen      tcell.Screen
+	Savers      map[string]SaverCreator
 }
 
 func rootCmd() *cobra.Command {
@@ -33,12 +35,16 @@ func rootCmd() *cobra.Command {
 					return err
 				}
 				opts.Repository = repo
+				opts.Savers = map[string]SaverCreator{
+					"basic": NewBasicSaver,
+				}
 			}
 			return runScreensaver(opts)
 		},
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository to contribute to")
+	cmd.Flags().StringVarP(&opts.Screensaver, "saver", "s", "basic", "Screensaver to play")
 
 	return cmd
 }
@@ -64,11 +70,54 @@ func main() {
 }
 
 type Screensaver interface {
-	Initialize(tcell.Screen, tcell.Style) error
+	Initialize(opts screensaverOpts) error
 	Update() error
 }
 
-// TODO write a basic screensaver
+type BasicSaver struct {
+	screen tcell.Screen
+	style  tcell.Style
+	frame  int
+}
+
+type SaverCreator func(screensaverOpts) (Screensaver, error)
+
+func NewBasicSaver(opts screensaverOpts) (Screensaver, error) {
+	bs := &BasicSaver{}
+	if err := bs.Initialize(opts); err != nil {
+		return nil, err
+	}
+	return bs, nil
+}
+
+func (bs *BasicSaver) Initialize(opts screensaverOpts) error {
+	bs.screen = opts.Screen
+	bs.style = opts.Style
+
+	return nil
+}
+
+func (bs *BasicSaver) Update() error {
+	bs.frame++
+	x := 0
+	y := 0
+	drawStr(bs.screen, x, y, bs.style, "HELLO WORLD")
+	return nil
+}
+
+func drawStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
+	for _, c := range str {
+		var comb []rune
+		w := runewidth.RuneWidth(c)
+		if w == 0 {
+			comb = []rune{c}
+			c = ' '
+			w = 1
+		}
+		s.SetContent(x, y, c, comb, style)
+		x += w
+	}
+}
 
 func runScreensaver(opts screensaverOpts) error {
 	style := tcell.StyleDefault
@@ -85,6 +134,11 @@ func runScreensaver(opts screensaverOpts) error {
 
 	opts.Screen = screen
 
+	saver, err := opts.Savers[opts.Screensaver](opts)
+	if err != nil {
+		return err
+	}
+
 	quit := make(chan struct{})
 	go func() {
 		for {
@@ -99,6 +153,7 @@ func runScreensaver(opts screensaverOpts) error {
 		}
 	}()
 
+	var saverErr error
 loop:
 	for {
 		select {
@@ -108,13 +163,16 @@ loop:
 		}
 
 		screen.Clear()
-		// TODO update step, call chosen screensaver's update method
+		if err := saver.Update(); err != nil {
+			saverErr = err
+			break loop
+		}
 		screen.Show()
 	}
 
 	screen.Fini()
 
-	return nil
+	return saverErr
 }
 
 // gh shells out to gh, returning STDOUT/STDERR and any error
