@@ -17,6 +17,7 @@ import (
 type screensaverOpts struct {
 	Screensaver string
 	Repository  string
+	List        bool
 	Style       tcell.Style
 	Screen      tcell.Screen
 	Savers      map[string]SaverCreator
@@ -38,6 +39,8 @@ func rootCmd() *cobra.Command {
 				opts.Savers = map[string]SaverCreator{
 					"basic": NewBasicSaver,
 				}
+				// TODO respect -l
+				// TODO support random by default
 			}
 			return runScreensaver(opts)
 		},
@@ -45,6 +48,7 @@ func rootCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository to contribute to")
 	cmd.Flags().StringVarP(&opts.Screensaver, "saver", "s", "basic", "Screensaver to play")
+	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List available screensavers and exit")
 
 	return cmd
 }
