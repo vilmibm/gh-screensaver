@@ -10,6 +10,7 @@ type MarqueeSaver struct {
 	style  tcell.Style
 	x      int
 	msg    string
+	inputs map[string]string
 }
 
 func NewMarqueeSaver(opts screensaverOpts) (Screensaver, error) {
@@ -23,15 +24,25 @@ func NewMarqueeSaver(opts screensaverOpts) (Screensaver, error) {
 	return bs, nil
 }
 
+func (bs *MarqueeSaver) Inputs() map[string]SaverInput {
+	return map[string]SaverInput{
+		"script": {
+			Default:     "script",
+			Description: "Font file to use",
+		},
+	}
+}
+
+func (bs *MarqueeSaver) SetInputs(inputs map[string]string) {
+	bs.inputs = inputs
+}
+
 func (bs *MarqueeSaver) Initialize(opts screensaverOpts) error {
 	bs.screen = opts.Screen
 	bs.style = opts.Style
 
 	return nil
 }
-
-// TODO remember how to get terminal dimensions
-// TODO track x pos in struct
 
 func (bs *MarqueeSaver) Update() error {
 	width, height := bs.screen.Size()

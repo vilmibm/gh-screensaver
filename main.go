@@ -9,11 +9,19 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/mattn/go-runewidth"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
+
+type SaverInput struct {
+	Default     string
+	Description string // TODO do i even want
+}
 
 type Screensaver interface {
 	Initialize(opts screensaverOpts) error
 	Update() error
+	Inputs() map[string]SaverInput
+	SetInputs(map[string]string)
 }
 
 type SaverCreator func(screensaverOpts) (Screensaver, error)
@@ -25,6 +33,7 @@ type screensaverOpts struct {
 	Style       tcell.Style
 	Screen      tcell.Screen
 	Savers      map[string]SaverCreator
+	SaverArgs   []string
 }
 
 func drawStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
@@ -60,6 +69,24 @@ func runScreensaver(opts screensaverOpts) error {
 	if err != nil {
 		return err
 	}
+
+	providedInputs := map[string]string{}
+	if len(opts.SaverArgs) > 0 {
+		fs := pflag.FlagSet{}
+		for inputName, input := range saver.Inputs() {
+			fs.String(inputName, input.Default, input.Description)
+		}
+		err = fs.Parse(opts.SaverArgs)
+		if err != nil {
+			return fmt.Errorf("could not parse input args: %w", err)
+		}
+		for inputName := range saver.Inputs() {
+			providedValue, _ := fs.GetString(inputName)
+			providedInputs[inputName] = providedValue
+		}
+	}
+
+	saver.SetInputs(providedInputs)
 
 	quit := make(chan struct{})
 	go func() {
@@ -112,6 +139,10 @@ func rootCmd() *cobra.Command {
 				opts.Repository = repo
 				opts.Savers = map[string]SaverCreator{
 					"marquee": NewMarqueeSaver,
+					// TODO fireworks
+					// TODO aquarium
+					// TODO pipes
+					// TODO noise
 				}
 				if opts.Screensaver == "" {
 					opts.Screensaver = pickRandom(opts.Savers)
