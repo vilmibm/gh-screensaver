@@ -4,44 +4,17 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/mattn/go-runewidth"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
+	"github.com/vilmibm/gh-screensaver/savers"
+	"github.com/vilmibm/gh-screensaver/savers/shared"
 )
 
-type Screensaver interface {
-	Initialize(opts screensaverOpts) error
-	Update() error
-}
-
-type SaverCreator func(screensaverOpts) (Screensaver, error)
-
-type screensaverOpts struct {
-	Screensaver string
-	Repository  string
-	List        bool
-	Style       tcell.Style
-	Screen      tcell.Screen
-	Savers      map[string]SaverCreator
-}
-
-func drawStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
-	for _, c := range str {
-		var comb []rune
-		w := runewidth.RuneWidth(c)
-		if w == 0 {
-			comb = []rune{c}
-			c = ' '
-			w = 1
-		}
-		s.SetContent(x, y, c, comb, style)
-		x += w
-	}
-}
-
-func runScreensaver(opts screensaverOpts) error {
+func runScreensaver(opts shared.ScreensaverOpts) error {
 	style := tcell.StyleDefault
 	opts.Style = style
 
@@ -57,6 +30,28 @@ func runScreensaver(opts screensaverOpts) error {
 	opts.Screen = screen
 
 	saver, err := opts.Savers[opts.Screensaver](opts)
+	if err != nil {
+		return err
+	}
+
+	// TODO ignore unused parameters
+	providedInputs := map[string]string{}
+	fs := pflag.FlagSet{}
+	for inputName, input := range saver.Inputs() {
+		fs.String(inputName, input.Default, input.Description)
+	}
+	err = fs.Parse(opts.SaverArgs)
+	if err != nil {
+		if !strings.Contains(err.Error(), "unknown flag") {
+			return fmt.Errorf("could not parse input args: %w", err)
+		}
+	}
+	for inputName := range saver.Inputs() {
+		providedValue, _ := fs.GetString(inputName)
+		providedInputs[inputName] = providedValue
+	}
+
+	err = saver.SetInputs(providedInputs)
 	if err != nil {
 		return err
 	}
@@ -84,7 +79,7 @@ loop:
 		case <-time.After(time.Millisecond * 100):
 		}
 
-		screen.Clear()
+		saver.Clear()
 		if err := saver.Update(); err != nil {
 			saverErr = err
 			break loop
@@ -98,31 +93,64 @@ loop:
 }
 
 func rootCmd() *cobra.Command {
-	opts := screensaverOpts{}
+	opts := shared.ScreensaverOpts{}
 	cmd := &cobra.Command{
 		Use:   "screensaver",
 		Short: "Watch a terminal saver animation",
-		Args:  cobra.NoArgs,
+		Long: `
+By default, runs a random screensaver.
+
+When selecting a specific screensaver with -s, some of them support 
+configuration options that can be passed after --. For example:
+
+gh screensavver -smarquee --message="hello world" --font="script"
+
+marquee
+  --message="custom message"
+  --font="script"
+
+  Fonts: banner, big, block, bubble, digital, ivrit, lean, mini, 
+         mnemonic, script, shadow, slant, small, smscript, smshadow, 
+         smslant, standard, term
+
+fireworks
+  --color can either be "full" of "off"
+
+starfield
+  --density is the maximum number of stars to draw (default 250)
+  --speed is the speed to fly through space (default 4)
+
+pipes
+  --color can either be "full" of "off"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.SaverArgs = args
 			if opts.Repository == "" {
-				repo, err := resolveRepository()
-				if err != nil {
-					return err
-				}
+				repo, _ := resolveRepository()
+				// Not erroring here; if a saver requires to know the repository it
+				// will have to error itself if opts.Repository is ""
 				opts.Repository = repo
-				opts.Savers = map[string]SaverCreator{
-					"marquee": NewMarqueeSaver,
-				}
-				if opts.Screensaver == "" {
-					opts.Screensaver = pickRandom(opts.Savers)
-				}
-				if opts.List {
-					for _, k := range saverKeys(opts.Savers) {
-						fmt.Println(k)
-					}
-					return nil
-				}
 			}
+			opts.Savers = map[string]shared.SaverCreator{
+				"marquee":   savers.NewMarqueeSaver,
+				"fireworks": savers.NewFireworksSaver,
+				"pipes":     savers.NewPipesSaver,
+				"starfield": savers.NewStarfieldSaver,
+				"pollock":   savers.NewPollockSaver,
+				// TODO aquarium
+				// TODO noise
+				// TODO game of life
+				// TODO issues/pr float by?
+			}
+			if opts.Screensaver == "" {
+				opts.Screensaver = pickRandom(opts.Savers)
+			}
+			if opts.List {
+				for _, k := range saverKeys(opts.Savers) {
+					fmt.Println(k)
+				}
+				return nil
+			}
+
 			return runScreensaver(opts)
 		},
 	}
@@ -134,7 +162,7 @@ func rootCmd() *cobra.Command {
 	return cmd
 }
 
-func saverKeys(savers map[string]SaverCreator) []string {
+func saverKeys(savers map[string]shared.SaverCreator) []string {
 	keys := []string{}
 	for k := range savers {
 		keys = append(keys, k)
@@ -143,7 +171,7 @@ func saverKeys(savers map[string]SaverCreator) []string {
 	return keys
 }
 
-func pickRandom(savers map[string]SaverCreator) string {
+func pickRandom(savers map[string]shared.SaverCreator) string {
 	rand.Seed(time.Now().UTC().UnixNano())
 	keys := saverKeys(savers)
 	ix := rand.Intn(len(keys))

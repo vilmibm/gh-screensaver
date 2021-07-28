@@ -1,15 +1,50 @@
 #!/bin/bash
+set -e
 
-if [ "$(which go)" = "" ]; then 
-	echo "go must be installed to use this gh extension"
-	exit 1
+extensionPath="$(dirname "$0")"
+arch="$(uname -m)"
+
+exe=""
+
+if uname -a | grep Msys > /dev/null; then
+  if [ $arch = "x86_64" ]; then
+    exe="windows-x86_64"
+  elif [ $arch = "i686" ]; then
+    exe="windows-i386"
+  elif [ $arch = "i386" ]; then
+    exe="windows-i386"
+  fi
+elif uname -a | grep Darwin > /dev/null; then
+  if [ $arch = "x86_64" ]; then
+    exe="darwin-x86_64"
+  fi
+elif uname -a | grep Linux > /dev/null; then
+  if [ $arch = "x86_64" ]; then
+    exe="linux-x86_64"
+  elif [ $arch = "i686" ]; then
+    exe="linux-i386"
+  elif [ $arch = "i386" ]; then
+    exe="linux-i386"
+  fi
 fi
 
-exe="cmd.out"
-extensionPath="$(dirname $(realpath $0))"
+if [ "${exe}" == "" ]; then
+  if [ "$(which go)" = "" ]; then
+    echo "go must be installed to use this gh extension on this platform"
+    exit 1
+  fi
 
-cd "${extensionPath}" > /dev/null
-go build -o "${exe}"
-cd - > /dev/null
+  exe="cmd.out"
+
+  cd "${extensionPath}" > /dev/null
+  go build -o "${exe}"
+  cd - > /dev/null
+else
+  if [[ ! -x "${extensionPath}/${exe}" ]]; then
+    rm -f "${extensionPath}/${exe}"
+    gh release download -p "${exe}" --dir="${extensionPath}"
+    chmod +x "${extensionPath}/${exe}"
+  fi
+fi
 
 exec "${extensionPath}/${exe}" "$@"
