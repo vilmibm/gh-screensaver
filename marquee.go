@@ -5,15 +5,15 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
-type BasicSaver struct {
+type MarqueeSaver struct {
 	screen tcell.Screen
 	style  tcell.Style
 	x      int
 	msg    string
 }
 
-func NewBasicSaver(opts screensaverOpts) (Screensaver, error) {
-	bs := &BasicSaver{}
+func NewMarqueeSaver(opts screensaverOpts) (Screensaver, error) {
+	bs := &MarqueeSaver{}
 	if err := bs.Initialize(opts); err != nil {
 		return nil, err
 	}
@@ -23,7 +23,7 @@ func NewBasicSaver(opts screensaverOpts) (Screensaver, error) {
 	return bs, nil
 }
 
-func (bs *BasicSaver) Initialize(opts screensaverOpts) error {
+func (bs *MarqueeSaver) Initialize(opts screensaverOpts) error {
 	bs.screen = opts.Screen
 	bs.style = opts.Style
 
@@ -33,7 +33,7 @@ func (bs *BasicSaver) Initialize(opts screensaverOpts) error {
 // TODO remember how to get terminal dimensions
 // TODO track x pos in struct
 
-func (bs *BasicSaver) Update() error {
+func (bs *MarqueeSaver) Update() error {
 	width, height := bs.screen.Size()
 	y := height / 2
 	bs.x--

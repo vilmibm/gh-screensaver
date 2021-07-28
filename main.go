@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -110,20 +111,43 @@ func rootCmd() *cobra.Command {
 				}
 				opts.Repository = repo
 				opts.Savers = map[string]SaverCreator{
-					"basic": NewBasicSaver,
+					"marquee": NewMarqueeSaver,
 				}
-				// TODO respect -l
-				// TODO support random by default
+				if opts.Screensaver == "" {
+					opts.Screensaver = pickRandom(opts.Savers)
+				}
+				if opts.List {
+					for _, k := range saverKeys(opts.Savers) {
+						fmt.Println(k)
+					}
+					return nil
+				}
 			}
 			return runScreensaver(opts)
 		},
 	}
 
 	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository to contribute to")
-	cmd.Flags().StringVarP(&opts.Screensaver, "saver", "s", "basic", "Screensaver to play")
+	cmd.Flags().StringVarP(&opts.Screensaver, "saver", "s", "", "Screensaver to play")
 	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List available screensavers and exit")
 
 	return cmd
+}
+
+func saverKeys(savers map[string]SaverCreator) []string {
+	keys := []string{}
+	for k := range savers {
+		keys = append(keys, k)
+	}
+
+	return keys
+}
+
+func pickRandom(savers map[string]SaverCreator) string {
+	rand.Seed(time.Now().UTC().UnixNano())
+	keys := saverKeys(savers)
+	ix := rand.Intn(len(keys))
+	return keys[ix]
 }
 
 func main() {
