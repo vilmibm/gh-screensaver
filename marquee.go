@@ -22,28 +22,34 @@ func NewMarqueeSaver(opts screensaverOpts) (Screensaver, error) {
 		return nil, err
 	}
 	width, _ := bs.screen.Size()
-	// TODO vendor fonts
-	f, err := figletlib.GetFontByName("/usr/share/figlet", "slant")
-	if err != nil {
-		return nil, err
-	}
-	// TODO parameterize message
-	bs.banner = figletlib.SprintMsg("RUIN YOURSELF BEFORE THEY DO", f, width, f.Settings(), "left")
 	bs.x = width
 	return bs, nil
 }
 
 func (bs *MarqueeSaver) Inputs() map[string]SaverInput {
+	// TODO vendor fonts
+	// TODO list fonts in documentation
 	return map[string]SaverInput{
 		"font": {
 			Default:     "slant",
 			Description: "Font file to use",
 		},
+		"message": {
+			Default:     "TODO",
+			Description: "Message to display",
+		},
 	}
 }
 
-func (bs *MarqueeSaver) SetInputs(inputs map[string]string) {
+func (bs *MarqueeSaver) SetInputs(inputs map[string]string) error {
 	bs.inputs = inputs
+	f, err := figletlib.GetFontByName("/usr/share/figlet", bs.inputs["font"])
+	if err != nil {
+		return err
+	}
+	width, _ := bs.screen.Size()
+	bs.banner = figletlib.SprintMsg(bs.inputs["message"], f, width, f.Settings(), "left")
+	return nil
 }
 
 func (bs *MarqueeSaver) Initialize(opts screensaverOpts) error {

@@ -21,7 +21,7 @@ type Screensaver interface {
 	Initialize(opts screensaverOpts) error
 	Update() error
 	Inputs() map[string]SaverInput
-	SetInputs(map[string]string)
+	SetInputs(map[string]string) error
 }
 
 type SaverCreator func(screensaverOpts) (Screensaver, error)
@@ -70,12 +70,15 @@ func runScreensaver(opts screensaverOpts) error {
 		return err
 	}
 
+	// TODO this is all jacked up, fix next
 	providedInputs := map[string]string{}
 	if len(opts.SaverArgs) > 0 {
 		fs := pflag.FlagSet{}
 		for inputName, input := range saver.Inputs() {
 			fs.String(inputName, input.Default, input.Description)
 		}
+		fmt.Printf("DBG %#v\n", fs)
+		fmt.Printf("DBG %#v\n", opts.SaverArgs)
 		err = fs.Parse(opts.SaverArgs)
 		if err != nil {
 			return fmt.Errorf("could not parse input args: %w", err)
@@ -86,7 +89,10 @@ func runScreensaver(opts screensaverOpts) error {
 		}
 	}
 
-	saver.SetInputs(providedInputs)
+	err = saver.SetInputs(providedInputs)
+	if err != nil {
+		return err
+	}
 
 	quit := make(chan struct{})
 	go func() {
