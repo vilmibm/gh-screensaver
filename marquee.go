@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/lukesampson/figlet/figletlib"
 	"github.com/mattn/go-runewidth"
@@ -21,20 +23,20 @@ func NewMarqueeSaver(opts screensaverOpts) (Screensaver, error) {
 	}
 	width, _ := bs.screen.Size()
 	// TODO vendor fonts
-	f, err := figletlib.GetFontByName("/usr/share/figlet", "script")
+	f, err := figletlib.GetFontByName("/usr/share/figlet", "slant")
 	if err != nil {
 		return nil, err
 	}
 	// TODO parameterize message
-	bs.banner = figletlib.SprintMsg("HELLO WORLD", f, width, f.Settings(), "left")
+	bs.banner = figletlib.SprintMsg("RUIN YOURSELF BEFORE THEY DO", f, width, f.Settings(), "left")
 	bs.x = width
 	return bs, nil
 }
 
 func (bs *MarqueeSaver) Inputs() map[string]SaverInput {
 	return map[string]SaverInput{
-		"script": {
-			Default:     "script",
+		"font": {
+			Default:     "slant",
 			Description: "Font file to use",
 		},
 	}
@@ -56,14 +58,28 @@ func (bs *MarqueeSaver) Update() error {
 	y := height / 2
 	bs.x--
 
+	lines := strings.Split(bs.banner, "\n")
+	if len(lines) == 0 {
+		return nil
+	}
+
+	maxWidth := 0
+	for _, line := range lines {
+		if runewidth.StringWidth(line) > maxWidth {
+			maxWidth = runewidth.StringWidth(line)
+		}
+	}
+
 	// TODO fix this to work with banners
-	// - split into lines
 	// - ensure enough room for max width line
 	// - draw str each line
-	if bs.x+runewidth.StringWidth(bs.banner) < 0 {
+	if bs.x+maxWidth < 0 {
 		bs.x = width
 	}
 
-	drawStr(bs.screen, bs.x, y, bs.style, bs.banner)
+	for ix, line := range lines {
+		drawStr(bs.screen, bs.x, y+ix, bs.style, line)
+	}
+
 	return nil
 }
