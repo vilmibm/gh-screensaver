@@ -33,7 +33,6 @@ func runScreensaver(opts shared.ScreensaverOpts) error {
 		return err
 	}
 
-	// TODO this is all jacked up, fix next
 	providedInputs := map[string]string{}
 	fs := pflag.FlagSet{}
 	for inputName, input := range saver.Inputs() {
@@ -95,29 +94,31 @@ func rootCmd() *cobra.Command {
 		Use:   "screensaver",
 		Short: "Watch a terminal saver animation",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			opts.SaverArgs = args
 			if opts.Repository == "" {
 				repo, err := resolveRepository()
 				if err != nil {
 					return err
 				}
 				opts.Repository = repo
-				opts.Savers = map[string]shared.SaverCreator{
-					"marquee": savers.NewMarqueeSaver,
-					// TODO fireworks
-					// TODO aquarium
-					// TODO pipes
-					// TODO noise
-				}
-				if opts.Screensaver == "" {
-					opts.Screensaver = pickRandom(opts.Savers)
-				}
-				if opts.List {
-					for _, k := range saverKeys(opts.Savers) {
-						fmt.Println(k)
-					}
-					return nil
-				}
 			}
+			opts.Savers = map[string]shared.SaverCreator{
+				"marquee": savers.NewMarqueeSaver,
+				// TODO fireworks
+				// TODO aquarium
+				// TODO pipes
+				// TODO noise
+			}
+			if opts.Screensaver == "" {
+				opts.Screensaver = pickRandom(opts.Savers)
+			}
+			if opts.List {
+				for _, k := range saverKeys(opts.Savers) {
+					fmt.Println(k)
+				}
+				return nil
+			}
+
 			return runScreensaver(opts)
 		},
 	}
