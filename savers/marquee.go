@@ -1,6 +1,8 @@
 package savers
 
 import (
+	"embed"
+	"fmt"
 	"strings"
 
 	"github.com/gdamore/tcell/v2"
@@ -8,6 +10,9 @@ import (
 	"github.com/mattn/go-runewidth"
 	"github.com/vilmibm/gh-screensaver/savers/shared"
 )
+
+//go:embed fonts/*
+var fonts embed.FS
 
 // TODO will likely share this
 func drawStr(s tcell.Screen, x, y int, style tcell.Style, str string) {
@@ -43,7 +48,6 @@ func NewMarqueeSaver(opts shared.ScreensaverOpts) (shared.Screensaver, error) {
 }
 
 func (bs *MarqueeSaver) Inputs() map[string]shared.SaverInput {
-	// TODO vendor fonts
 	// TODO list fonts in documentation
 	return map[string]shared.SaverInput{
 		"font": {
@@ -59,7 +63,14 @@ func (bs *MarqueeSaver) Inputs() map[string]shared.SaverInput {
 
 func (bs *MarqueeSaver) SetInputs(inputs map[string]string) error {
 	bs.inputs = inputs
-	f, err := figletlib.GetFontByName("/usr/share/figlet", bs.inputs["font"])
+	// TODO switch to embed + ReadFontByBytes
+
+	data, err := fonts.ReadFile("fonts/" + bs.inputs["font"] + ".flf")
+	if err != nil {
+		return fmt.Errorf("no such font: %s: %w", bs.inputs["font"], err)
+	}
+
+	f, err := figletlib.ReadFontFromBytes(data)
 	if err != nil {
 		return err
 	}
