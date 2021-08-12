@@ -3,7 +3,9 @@ package savers
 import (
 	"embed"
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/lukesampson/figlet/figletlib"
@@ -33,6 +35,7 @@ type MarqueeSaver struct {
 	screen tcell.Screen
 	style  tcell.Style
 	x      int
+	y      int
 	banner string
 	inputs map[string]string
 }
@@ -63,8 +66,6 @@ func (bs *MarqueeSaver) Inputs() map[string]shared.SaverInput {
 
 func (bs *MarqueeSaver) SetInputs(inputs map[string]string) error {
 	bs.inputs = inputs
-	// TODO switch to embed + ReadFontByBytes
-
 	data, err := fonts.ReadFile("fonts/" + bs.inputs["font"] + ".flf")
 	if err != nil {
 		return fmt.Errorf("no such font: %s: %w", bs.inputs["font"], err)
@@ -83,12 +84,13 @@ func (bs *MarqueeSaver) Initialize(opts shared.ScreensaverOpts) error {
 	bs.screen = opts.Screen
 	bs.style = opts.Style
 
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	return nil
 }
 
 func (bs *MarqueeSaver) Update() error {
 	width, height := bs.screen.Size()
-	y := height / 2
 	bs.x--
 
 	lines := strings.Split(bs.banner, "\n")
@@ -103,15 +105,13 @@ func (bs *MarqueeSaver) Update() error {
 		}
 	}
 
-	// TODO fix this to work with banners
-	// - ensure enough room for max width line
-	// - draw str each line
 	if bs.x+maxWidth < 0 {
 		bs.x = width
+		bs.y = rand.Intn(height - len(lines))
 	}
 
 	for ix, line := range lines {
-		drawStr(bs.screen, bs.x, y+ix, bs.style, line)
+		drawStr(bs.screen, bs.x, bs.y+ix, bs.style, line)
 	}
 
 	return nil
