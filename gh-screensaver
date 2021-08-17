@@ -6,7 +6,7 @@ if [ "$(which go)" = "" ]; then
 fi
 
 exe="cmd.out"
-extensionPath="$(dirname $(realpath $0))"
+extensionPath="$(dirname "$0")"
 
 cd "${extensionPath}" > /dev/null
 go build -o "${exe}"
