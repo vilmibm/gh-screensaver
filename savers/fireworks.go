@@ -197,6 +197,8 @@ func (f *firework) Update() {
 	// TODO remove
 }
 
+// TODO affordance for setting animation interval from within screensaver
+
 func (f *firework) Done() bool {
 	return f.done
 }
@@ -213,6 +215,8 @@ func (f *firework) Draw() {
 			// TODO use color
 			drawStr(f.screen, f.x, f.y+ix, f.style, line)
 		}
+
+		f.ExplodeSprite.Advance()
 
 		return
 	}
