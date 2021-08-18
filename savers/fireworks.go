@@ -57,8 +57,23 @@ func (fs *FireworksSaver) SetInputs(inputs map[string]string) error {
 }
 
 func (fs *FireworksSaver) Update() error {
-	// TODO track current fireworks, looping and calling Update on each one
-	// TODO potentially launch new firework
+	next := []*firework{}
+	for _, f := range fs.fireworks {
+		f.Update()
+		if !f.Done() {
+			next = append(next, f)
+		} else {
+			continue
+		}
+		f.Draw()
+	}
+	fs.fireworks = next
+
+	// TODO tweak as needed
+	if rand.Intn(10) < 3 {
+		fs.fireworks = append(fs.fireworks, newFirework(fs.screen, fs.style))
+	}
+
 	return nil
 }
 
@@ -79,8 +94,8 @@ func (s *sprite) Advance() {
 type firework struct {
 	Color1        tcell.Color
 	Color2        tcell.Color
-	ShootSprite   sprite
-	ExplodeSprite sprite
+	TrailSprite   *sprite
+	ExplodeSprite *sprite
 	x             int
 	y             int
 	height        int
@@ -88,12 +103,74 @@ type firework struct {
 	style         tcell.Style
 }
 
+func parensTrail() *sprite {
+	return &sprite{
+		frames: []spriteFrame{"(", "|", ")"},
+	}
+}
+
+func basicExplode() *sprite {
+	return &sprite{
+		frames: []spriteFrame{
+			`
+      *
+`,
+			`
+     ( )
+`,
+			`
+     ^
+		( )
+		 v
+`,
+			`
+   * ^ *
+	(     )
+	 * v *
+`,
+			`
+  \     /
+   *   *
+	(     )
+	 *   *
+	/     \
+`,
+			`
+  \     /
+   *   *
+	       
+	 *   *
+	/     \
+`,
+			`
+  \     /
+        
+	       
+	      
+	/     \
+`,
+			``,
+		},
+	}
+}
+
 func newFirework(screen tcell.Screen, style tcell.Style) *firework {
-	// TODO compute random x
-	// TODO compute random height
-	// TODO select colors
-	// TODO selct sprites
-	return &firework{}
+	width, height := screen.Size()
+	f := &firework{
+		screen: screen,
+		style:  style,
+		x:      rand.Intn(width),
+		height: rand.Intn(height),
+		// TODO randomize
+		TrailSprite: parensTrail(),
+		// TODO randomize
+		ExplodeSprite: basicExplode(),
+		// TODO randomize
+		Color1: tcell.ColorBlue,
+		// TODO randomize
+		Color2: tcell.ColorLightBlue,
+	}
+	return f
 }
 
 func (f *firework) Update() {
@@ -102,4 +179,11 @@ func (f *firework) Update() {
 	// TODO check height, prep to explode
 	// TODO exlode
 	// TODO remove
+}
+
+func (f *firework) Done() bool {
+	return false
+}
+
+func (f *firework) Draw() {
 }
