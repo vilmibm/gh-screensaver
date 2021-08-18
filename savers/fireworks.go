@@ -254,12 +254,15 @@ func (f *firework) Draw() {
 			return
 		}
 
-		// TODO add color; modolu and switch on even/odd frames for Color1 and Color2
+		color := f.Color1
+		colorChoice := f.ExplodeSprite.Frame % 2
+		if colorChoice == 1 {
+			color = f.Color2
+		}
 
 		lines := strings.Split(f.ExplodeSprite.CurrentFrame(), "\n")
 		for ix, line := range lines {
-			// TODO use color
-			drawStr(f.screen, f.x, f.y+ix, f.style, line)
+			drawStr(f.screen, f.x, f.y+ix, f.style.Foreground(color), line)
 		}
 
 		f.ExplodeSprite.Advance()
@@ -267,7 +270,11 @@ func (f *firework) Draw() {
 		return
 	}
 
-	// TODO use color
-	drawStr(f.screen, f.x, f.y, f.style, f.TrailSprite.CurrentFrame())
+	color := f.Color1
+	colorChoice := f.TrailSprite.Frame % 2
+	if colorChoice == 1 {
+		color = f.Color2
+	}
+	drawStr(f.screen, f.x, f.y, f.style.Foreground(color), f.TrailSprite.CurrentFrame())
 	f.TrailSprite.Advance()
 }
