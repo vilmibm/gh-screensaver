@@ -128,52 +128,59 @@ func basicExplode() *sprite {
 	return &sprite{
 		frames: []string{
 			`
+          
 
+      *
+          
 
-      *`,
+          `,
 
 			`
 
 
-     ( )`,
+     ( )
+
+          `,
 
 			`
 
      ^
     ( )
      v
-		    `,
+
+		      `,
 
 			`
         
    * ^ *
-	(     )
+  (     )
    * v *
+
 	        `,
 			`
   \     /
    *   *
-	(     )
+  (     )
    *   *
-  /     \`,
+  /     \ `,
 			`
   \     /
    *   *
           			 
    *   *
-  /     \`,
+  /     \ `,
 			`
   \     /
            
 				  
          
-  /     \`,
+  /     \ `,
 			`
-						
-         
+            
+            
+           
           
-          
-			`,
+          `,
 		},
 	}
 }
@@ -214,9 +221,9 @@ func newFirework(screen tcell.Screen, style tcell.Style) *firework {
 	f := &firework{
 		screen: screen,
 		style:  style,
-		x:      rand.Intn(width),
+		x:      rand.Intn(width-5) + 5,
 		y:      height,
-		height: rand.Intn(height - 5),
+		height: rand.Intn(height - 8),
 		// TODO randomize
 		TrailSprite: parensTrail(),
 		// TODO randomize
@@ -233,12 +240,6 @@ func (f *firework) Update() {
 	} else {
 		f.y--
 	}
-
-	// TODO animate shootsprite
-	// TODO increase height
-	// TODO check height, prep to explode
-	// TODO exlode
-	// TODO remove
 }
 
 // TODO affordance for setting animation interval from within screensaver
@@ -262,7 +263,7 @@ func (f *firework) Draw() {
 
 		lines := strings.Split(f.ExplodeSprite.CurrentFrame(), "\n")
 		for ix, line := range lines {
-			drawStr(f.screen, f.x, f.y+ix, f.style.Foreground(color), line)
+			drawStr(f.screen, f.x-2, f.y+ix-2, f.style.Foreground(color), line)
 		}
 
 		f.ExplodeSprite.Advance()
