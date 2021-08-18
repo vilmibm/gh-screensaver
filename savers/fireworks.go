@@ -2,6 +2,7 @@ package savers
 
 import (
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -77,10 +78,8 @@ func (fs *FireworksSaver) Update() error {
 	return nil
 }
 
-type spriteFrame string
-
 type sprite struct {
-	frames []spriteFrame
+	frames []string
 	frame  int
 }
 
@@ -89,6 +88,14 @@ func (s *sprite) Advance() {
 	if s.frame == len(s.frames) {
 		s.frame = 0
 	}
+}
+
+func (s *sprite) CurrentFrame() string {
+	return s.frames[s.frame]
+}
+
+func (s *sprite) Done() bool {
+	return s.frame == len(s.frames)
 }
 
 type firework struct {
@@ -101,17 +108,19 @@ type firework struct {
 	height        int
 	screen        tcell.Screen
 	style         tcell.Style
+	exploding     bool
+	done          bool
 }
 
 func parensTrail() *sprite {
 	return &sprite{
-		frames: []spriteFrame{"(", "|", ")"},
+		frames: []string{"(", "|", ")"},
 	}
 }
 
 func basicExplode() *sprite {
 	return &sprite{
-		frames: []spriteFrame{
+		frames: []string{
 			`
       *
 `,
@@ -160,7 +169,8 @@ func newFirework(screen tcell.Screen, style tcell.Style) *firework {
 		screen: screen,
 		style:  style,
 		x:      rand.Intn(width),
-		height: rand.Intn(height),
+		y:      height,
+		height: rand.Intn(height - 5),
 		// TODO randomize
 		TrailSprite: parensTrail(),
 		// TODO randomize
@@ -174,6 +184,12 @@ func newFirework(screen tcell.Screen, style tcell.Style) *firework {
 }
 
 func (f *firework) Update() {
+	if f.y == f.height {
+		f.exploding = true
+	} else {
+		f.y--
+	}
+
 	// TODO animate shootsprite
 	// TODO increase height
 	// TODO check height, prep to explode
@@ -182,8 +198,26 @@ func (f *firework) Update() {
 }
 
 func (f *firework) Done() bool {
-	return false
+	return f.done
 }
 
 func (f *firework) Draw() {
+	if f.exploding {
+		if f.ExplodeSprite.Done() {
+			f.done = true
+			return
+		}
+
+		lines := strings.Split(f.ExplodeSprite.CurrentFrame(), "\n")
+		for ix, line := range lines {
+			// TODO use color
+			drawStr(f.screen, f.x, f.y+ix, f.style, line)
+		}
+
+		return
+	}
+
+	// TODO use color
+	drawStr(f.screen, f.x, f.y, f.style, f.TrailSprite.CurrentFrame())
+	f.TrailSprite.Advance()
 }
