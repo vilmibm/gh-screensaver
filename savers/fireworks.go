@@ -71,7 +71,7 @@ func (fs *FireworksSaver) Update() error {
 	fs.fireworks = next
 
 	// TODO tweak as needed
-	if rand.Intn(10) < 3 {
+	if rand.Intn(10) < 1 {
 		fs.fireworks = append(fs.fireworks, newFirework(fs.screen, fs.style))
 	}
 
@@ -80,22 +80,25 @@ func (fs *FireworksSaver) Update() error {
 
 type sprite struct {
 	frames []string
-	frame  int
+	Frame  int
+	loop   bool
 }
 
 func (s *sprite) Advance() {
-	s.frame++
-	if s.frame == len(s.frames) {
-		s.frame = 0
+	s.Frame++
+	if s.loop {
+		if s.Frame == len(s.frames) {
+			s.Frame = 0
+		}
 	}
 }
 
 func (s *sprite) CurrentFrame() string {
-	return s.frames[s.frame]
+	return s.frames[s.Frame]
 }
 
 func (s *sprite) Done() bool {
-	return s.frame == len(s.frames)
+	return s.Frame == len(s.frames)
 }
 
 type firework struct {
@@ -114,7 +117,10 @@ type firework struct {
 
 func parensTrail() *sprite {
 	return &sprite{
-		frames: []string{"(", "|", ")"},
+		loop: true,
+		frames: []string{
+			"(", "|", ")",
+		},
 	}
 }
 
@@ -122,49 +128,89 @@ func basicExplode() *sprite {
 	return &sprite{
 		frames: []string{
 			`
-      *
-`,
+
+
+      *`,
+
 			`
-     ( )
-`,
+
+
+     ( )`,
+
 			`
+
      ^
-		( )
-		 v
-`,
+    ( )
+     v
+		    `,
+
 			`
+        
    * ^ *
 	(     )
-	 * v *
-`,
+   * v *
+	        `,
 			`
   \     /
    *   *
 	(     )
-	 *   *
-	/     \
-`,
+   *   *
+  /     \`,
 			`
   \     /
    *   *
-	       
-	 *   *
-	/     \
-`,
+          			 
+   *   *
+  /     \`,
 			`
   \     /
-        
-	       
-	      
-	/     \
-`,
-			``,
+           
+				  
+         
+  /     \`,
+			`
+						
+         
+          
+          
+			`,
 		},
 	}
 }
 
+var colors = []tcell.Color{
+	tcell.ColorBlue,
+	tcell.ColorCoral,
+	tcell.ColorGoldenrod,
+	tcell.ColorGray,
+	tcell.ColorGreen,
+	tcell.ColorPink,
+	tcell.ColorSalmon,
+	tcell.ColorSeaGreen,
+	tcell.ColorDeepSkyBlue,
+	tcell.ColorSlateGray,
+	tcell.ColorSteelBlue,
+	tcell.ColorYellow,
+}
+
+var lightColors = []tcell.Color{
+	tcell.ColorLightBlue,
+	tcell.ColorLightCoral,
+	tcell.ColorLightGoldenrodYellow,
+	tcell.ColorLightGray,
+	tcell.ColorLightGreen,
+	tcell.ColorLightPink,
+	tcell.ColorLightSalmon,
+	tcell.ColorLightSeaGreen,
+	tcell.ColorLightSkyBlue,
+	tcell.ColorLightSlateGray,
+	tcell.ColorLightSteelBlue,
+	tcell.ColorLightYellow,
+}
+
 func newFirework(screen tcell.Screen, style tcell.Style) *firework {
 	width, height := screen.Size()
+	colorIx := rand.Intn(len(colors))
 	f := &firework{
 		screen: screen,
 		style:  style,
@@ -175,10 +221,8 @@ func newFirework(screen tcell.Screen, style tcell.Style) *firework {
 		TrailSprite: parensTrail(),
 		// TODO randomize
 		ExplodeSprite: basicExplode(),
-		// TODO randomize
-		Color1: tcell.ColorBlue,
-		// TODO randomize
-		Color2: tcell.ColorLightBlue,
+		Color1:        colors[colorIx],
+		Color2:        lightColors[colorIx],
 	}
 	return f
 }
@@ -209,6 +253,8 @@ func (f *firework) Draw() {
 			f.done = true
 			return
 		}
+
+		// TODO add color; modolu and switch on even/odd frames for Color1 and Color2
 
 		lines := strings.Split(f.ExplodeSprite.CurrentFrame(), "\n")
 		for ix, line := range lines {
