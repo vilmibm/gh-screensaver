@@ -96,10 +96,9 @@ func rootCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.SaverArgs = args
 			if opts.Repository == "" {
-				repo, err := resolveRepository()
-				if err != nil {
-					return err
-				}
+				repo, _ := resolveRepository()
+				// Not erroring here; if a saver requires to know the repository it
+				// will have to error itself if opts.Repository is ""
 				opts.Repository = repo
 			}
 			opts.Savers = map[string]shared.SaverCreator{
