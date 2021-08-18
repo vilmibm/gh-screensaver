@@ -88,6 +88,14 @@ type firework struct {
 	style         tcell.Style
 }
 
+func newFirework(screen tcell.Screen, style tcell.Style) *firework {
+	// TODO compute random x
+	// TODO compute random height
+	// TODO select colors
+	// TODO selct sprites
+	return &firework{}
+}
+
 func (f *firework) Update() {
 	// TODO animate shootsprite
 	// TODO increase height
