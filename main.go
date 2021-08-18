@@ -102,8 +102,8 @@ func rootCmd() *cobra.Command {
 				opts.Repository = repo
 			}
 			opts.Savers = map[string]shared.SaverCreator{
-				"marquee": savers.NewMarqueeSaver,
-				// TODO fireworks
+				"marquee":   savers.NewMarqueeSaver,
+				"fireworks": savers.NewFireworksSaver,
 				// TODO aquarium
 				// TODO pipes
 				// TODO noise
