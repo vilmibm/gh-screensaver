@@ -59,17 +59,44 @@ type coord struct {
 type pipe struct {
 	coords []coord
 	color  tcell.Color
+	width  int
+	height int
 }
 
 func newPipe(width, height int, color bool) *pipe {
-	p := &pipe{}
-	p.color = randColor()
-	// TODO select starting point
+	// TODO respect color bool
+	p := &pipe{
+		color:  randColor(),
+		width:  width,
+		height: height,
+	}
+	x := 0
+	y := 0
+	switch rand.Intn(4) {
+	case 0: // top
+		x = rand.Intn(width)
+	case 1: // right
+		x = width
+		y = rand.Intn(height)
+	case 2: // bottom
+		y = height
+		x = rand.Intn(width)
+	case 3: // left
+		y = rand.Intn(height)
+	}
+
+	p.coords = []coord{{x, y}}
+
 	return p
 }
 
-// TODO ValidMoves
-// TODO AddCoord
+func (p *pipe) ValidMoves() []coord {
+	return []coord{}
+}
+
+func (p *pipe) AddCoord(c coord) {
+	p.coords = append(p.coords, c)
+}
 
 func randColor() tcell.Color {
 	r := rand.Int31n(255)
@@ -80,7 +107,7 @@ func randColor() tcell.Color {
 }
 
 func (ps *PipesSaver) Update() error {
-	width, height = ps.screen.Size()
+	width, height := ps.screen.Size()
 	if rand.Intn(10) < 1 {
 		pipe := newPipe(width, height, ps.color)
 		ps.pipes = append(ps.pipes, pipe)
@@ -88,11 +115,16 @@ func (ps *PipesSaver) Update() error {
 
 	for _, p := range ps.pipes {
 		moves := p.ValidMoves()
-		// TODO pick random move
-		// TODO tell pipe about new move
+		ix := rand.Intn(len(moves))
+		p.AddCoord(moves[ix])
 	}
 
-	// TODO draw the coords for each pipe
+	for _, p := range ps.pipes {
+		for _, c := range p.coords {
+			// TODO determine if it's a change in direction and use "*"
+			drawStr(ps.screen, c.x, c.y, ps.style, "#")
+		}
+	}
 
 	// TODO the OG pipes clears itself at some interval. I think it will take far
 	// more time for us to fill up a screen, so initially I think i'll just let
