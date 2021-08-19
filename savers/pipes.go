@@ -34,7 +34,7 @@ func (ps *PipesSaver) Initialize(opts shared.ScreensaverOpts) error {
 	return nil
 }
 
-func (fs *PipesSaver) Inputs() map[string]shared.SaverInput {
+func (ps *PipesSaver) Inputs() map[string]shared.SaverInput {
 	return map[string]shared.SaverInput{
 		"color": {
 			Default:     "full",
@@ -56,7 +56,21 @@ type coord struct {
 	y int
 }
 
+type dir int
+
+const (
+	up    dir = 0
+	right dir = 1
+	down  dir = 2
+	left  dir = 3
+	cw    dir = 4
+	ccw   dir = 5
+)
+
+type relDir int
+
 type pipe struct {
+	dir    dir
 	coords []coord
 	color  tcell.Color
 	width  int
@@ -89,6 +103,72 @@ func newPipe(width, height int) *pipe {
 	return p
 }
 
+func turn(pd dir, d dir) dir {
+	if d == cw {
+		switch pd {
+		case up:
+			return right
+		case right:
+			return down
+		case down:
+			return left
+		case left:
+			return up
+		}
+	} else if d == ccw {
+		switch pd {
+		case up:
+			return left
+		case right:
+			return up
+		case down:
+			return right
+		case left:
+			return down
+		}
+	} else {
+		panic("bad dir")
+	}
+
+	return pd
+}
+
+func (p *pipe) Next() {
+	last := p.coords[len(p.coords)-1]
+	// 80% continue in current dir
+	// 10% turn right
+	// 10% turn left
+	score := rand.Intn(10)
+
+	// continue
+	if score == 8 {
+		p.dir = turn(p.dir, cw)
+	} else if score == 9 {
+		p.dir = turn(p.dir, ccw)
+	}
+
+	var next coord
+	switch p.dir {
+	case up:
+		next = coord{last.x, last.y - 1}
+	case right:
+		next = coord{last.x + 1, last.y}
+	case down:
+		next = coord{last.x, last.y + 1}
+	case left:
+		next = coord{last.x - 1, last.y}
+	}
+
+	if next.x < 0 || next.y > p.height || next.y < 0 || next.y > p.width {
+		// just hang out until we get a legal move
+		return
+	}
+
+	p.coords = append(p.coords, next)
+}
+
+// TODO This was a foolish thing I did but I'm saving the code bc it is a cool
+// effect; going to put it in a "running paint" color blotch screensaver
 func (p *pipe) ValidMoves() []coord {
 	last := p.coords[len(p.coords)-1]
 	penul := coord{-1, -1}
@@ -162,16 +242,21 @@ func (ps *PipesSaver) Update() error {
 		ps.pipes = append(ps.pipes, pipe)
 	}
 
-	for _, p := range ps.pipes {
-		moves := p.ValidMoves()
-		if len(moves) == 0 {
-			continue
-		}
-		ix := rand.Intn(len(moves))
-		p.AddCoord(moves[ix])
-	}
+	/*
+		// TODO This was a foolish thing I did but I'm saving the code bc it is a cool
+		// effect; going to put it in a "running paint" color blotch screensaver
+				for _, p := range ps.pipes {
+					moves := p.ValidMoves()
+					if len(moves) == 0 {
+						continue
+					}
+					ix := rand.Intn(len(moves))
+					p.AddCoord(moves[ix])
+				}
+	*/
 
 	for _, p := range ps.pipes {
+		p.Next()
 		for _, c := range p.coords {
 			s := ps.style
 			if ps.color {
