@@ -89,39 +89,64 @@ func newPipe(width, height int) *pipe {
 	return p
 }
 
+// TODO don't spawn multiple pipes at the same point
+
+// problem: i want to have more negative space; i'd like the pipes to not grow so close to themselves.
+
+// what if instead of storing absolute points I stored a series of vectors? the valid moves shouldn't be one of three surrounding points, but a choice between:
+
+// - continue
+// - turn left
+// - turn right
+
+// while forbidding two turns in a row
+
+type move int
+
+const (
+	straight  move = 0
+	turnLeft  move = 1
+	turnRight move = 2
+)
+
 func (p *pipe) ValidMoves() []coord {
+	// current
+	// ###
+	//   #*
+	//   ##*
+	//    *
+
+	// two straights
+	// ###
+	//   #
+	//   ##*
+	//
+
+	// TODO want to do two straighs before a turn; how to compute that?
+	// - either x or y unchanged for last and penul
 	last := p.coords[len(p.coords)-1]
 	penul := coord{-1, -1}
 	if len(p.coords) > 1 {
 		penul = p.coords[len(p.coords)-2]
 	}
-	out := []coord{}
+	all := []coord{}
 	if last.y > 0 {
-		y := last.y - 1
-		x := last.x
-		if x != penul.x && y != penul.y {
-			out = append(out, coord{last.x, last.y - 1})
-		}
+		all = append(all, coord{last.x, last.y - 1})
 	}
 	if last.x < p.width {
-		x := last.x + 1
-		y := last.y
-		if x != penul.x && y != penul.y {
-			out = append(out, coord{last.x + 1, last.y})
-		}
+		all = append(all, coord{last.x + 1, last.y})
 	}
 	if last.y < p.height {
-		x := last.x
-		y := last.y + 1
-		if x != penul.x && y != penul.y {
-			out = append(out, coord{last.x, last.y + 1})
-		}
+		all = append(all, coord{last.x, last.y + 1})
 	}
 	if last.x > 0 {
-		x := last.x - 1
-		y := last.y
-		if x != penul.x && y != penul.y {
-			out = append(out, coord{last.x - 1, last.y})
+		all = append(all, coord{last.x - 1, last.y})
+	}
+	out := []coord{}
+	for _, c := range all {
+		if c.x != penul.x && c.y != penul.y {
+			// Is it not the penultimate point? Want to prevent backtracking
+			out = append(out, c)
 		}
 	}
 	return out
@@ -154,7 +179,6 @@ func (ps *PipesSaver) Update() error {
 
 	for _, p := range ps.pipes {
 		for _, c := range p.coords {
-			// TODO determine if it's a change in direction and use "*"
 			s := ps.style
 			if ps.color {
 				s = s.Foreground(p.color)
