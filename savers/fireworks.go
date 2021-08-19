@@ -124,6 +124,30 @@ func parensTrail() *sprite {
 	}
 }
 
+func sparkyTrail() *sprite {
+	return &sprite{
+		loop: true,
+		frames: []string{
+			"*", "x", ".",
+		},
+	}
+}
+
+func bangTrail() *sprite {
+	return &sprite{
+		loop: true,
+		frames: []string{
+			"i", "!", "|",
+		},
+	}
+}
+
+var trails = []func() *sprite{
+	sparkyTrail,
+	parensTrail,
+	bangTrail,
+}
+
 func basicExplode() *sprite {
 	return &sprite{
 		frames: []string{
@@ -218,14 +242,14 @@ var lightColors = []tcell.Color{
 func newFirework(screen tcell.Screen, style tcell.Style) *firework {
 	width, height := screen.Size()
 	colorIx := rand.Intn(len(colors))
+	trailIx := rand.Intn(len(trails))
 	f := &firework{
-		screen: screen,
-		style:  style,
-		x:      rand.Intn(width-5) + 5,
-		y:      height,
-		height: rand.Intn(height - 8),
-		// TODO randomize
-		TrailSprite: parensTrail(),
+		screen:      screen,
+		style:       style,
+		x:           rand.Intn(width-5) + 5,
+		y:           height,
+		height:      rand.Intn(height - 8),
+		TrailSprite: trails[trailIx](),
 		// TODO randomize
 		ExplodeSprite: basicExplode(),
 		Color1:        colors[colorIx],
