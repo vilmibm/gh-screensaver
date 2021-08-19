@@ -9,9 +9,6 @@ import (
 	"github.com/vilmibm/gh-screensaver/savers/shared"
 )
 
-// Want to launch fireworks from bottom of screen at a random x coord. Interval for shooting the firework with chance to fire per x coord chosen.
-// Each firework should be its own updating entity that advances up a random number of y coords bounded by screen height, removing itself onces it's exploded.
-// Fireworks should have a color pallete and then a particular explody animation.
 // Not for MVP but would be cool to have "rare" fireworks that occur way less frequently.
 
 type FireworksSaver struct {
@@ -66,7 +63,7 @@ func (fs *FireworksSaver) Update() error {
 		} else {
 			continue
 		}
-		f.Draw()
+		f.Draw(fs.color)
 	}
 	fs.fireworks = next
 
@@ -375,7 +372,7 @@ func (f *firework) Done() bool {
 	return f.done
 }
 
-func (f *firework) Draw() {
+func (f *firework) Draw(useColor bool) {
 	if f.exploding {
 		if f.ExplodeSprite.Done() {
 			f.done = true
@@ -390,7 +387,11 @@ func (f *firework) Draw() {
 
 		lines := strings.Split(f.ExplodeSprite.CurrentFrame(), "\n")
 		for ix, line := range lines {
-			drawStr(f.screen, f.x-2, f.y+ix-2, f.style.Foreground(color), line)
+			s := f.style
+			if useColor {
+				s = f.style.Foreground(color)
+			}
+			drawStr(f.screen, f.x-2, f.y+ix-2, s, line)
 		}
 
 		f.ExplodeSprite.Advance()
@@ -403,6 +404,10 @@ func (f *firework) Draw() {
 	if colorChoice == 1 {
 		color = f.Color2
 	}
-	drawStr(f.screen, f.x, f.y, f.style.Foreground(color), f.TrailSprite.CurrentFrame())
+	s := f.style
+	if useColor {
+		s = f.style.Foreground(color)
+	}
+	drawStr(f.screen, f.x, f.y, s, f.TrailSprite.CurrentFrame())
 	f.TrailSprite.Advance()
 }
