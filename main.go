@@ -105,8 +105,9 @@ func rootCmd() *cobra.Command {
 				"marquee":   savers.NewMarqueeSaver,
 				"fireworks": savers.NewFireworksSaver,
 				"pipes":     savers.NewPipesSaver,
-				//"starfield": savers.NewStarfieldSaver,
+				"starfield": savers.NewStarfieldSaver,
 				// TODO aquarium
+				// TODO running paint
 				// TODO noise
 				// TODO game of life
 				// TODO issues/pr float by?
