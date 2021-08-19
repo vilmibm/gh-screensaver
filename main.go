@@ -104,9 +104,11 @@ func rootCmd() *cobra.Command {
 			opts.Savers = map[string]shared.SaverCreator{
 				"marquee":   savers.NewMarqueeSaver,
 				"fireworks": savers.NewFireworksSaver,
+				"pipes":     savers.NewPipesSaver,
 				// TODO aquarium
-				// TODO pipes
 				// TODO noise
+				// TODO game of life
+				// TODO issues/pr float by?
 			}
 			if opts.Screensaver == "" {
 				opts.Screensaver = pickRandom(opts.Savers)

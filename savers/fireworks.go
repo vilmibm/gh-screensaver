@@ -38,6 +38,7 @@ func (fs *FireworksSaver) Initialize(opts shared.ScreensaverOpts) error {
 }
 
 func (fs *FireworksSaver) Inputs() map[string]shared.SaverInput {
+	// TODO eventually support truecolor
 	return map[string]shared.SaverInput{
 		"color": {
 			Default:     "full",
