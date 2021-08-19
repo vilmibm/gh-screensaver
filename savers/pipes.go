@@ -89,45 +89,15 @@ func newPipe(width, height int) *pipe {
 	return p
 }
 
-// TODO don't spawn multiple pipes at the same point
-
-// problem: i want to have more negative space; i'd like the pipes to not grow so close to themselves.
-
-// what if instead of storing absolute points I stored a series of vectors? the valid moves shouldn't be one of three surrounding points, but a choice between:
-
-// - continue
-// - turn left
-// - turn right
-
-// while forbidding two turns in a row
-
-type move int
-
-const (
-	straight  move = 0
-	turnLeft  move = 1
-	turnRight move = 2
-)
-
 func (p *pipe) ValidMoves() []coord {
-	// current
-	// ###
-	//   #*
-	//   ##*
-	//    *
-
-	// two straights
-	// ###
-	//   #
-	//   ##*
-	//
-
-	// TODO want to do two straighs before a turn; how to compute that?
-	// - either x or y unchanged for last and penul
 	last := p.coords[len(p.coords)-1]
 	penul := coord{-1, -1}
+	third := coord{-1, -2}
 	if len(p.coords) > 1 {
 		penul = p.coords[len(p.coords)-2]
+	}
+	if len(p.coords) > 2 {
+		third = p.coords[len(p.coords)-3]
 	}
 	all := []coord{}
 	if last.y > 0 {
@@ -144,11 +114,21 @@ func (p *pipe) ValidMoves() []coord {
 	}
 	out := []coord{}
 	for _, c := range all {
-		if c.x != penul.x && c.y != penul.y {
-			// Is it not the penultimate point? Want to prevent backtracking
-			out = append(out, c)
+		// Is it the penultimate point? Want to prevent backtracking
+		if c.x == penul.x && c.y == penul.y {
+			continue
 		}
+
+		if (third.x == penul.x && penul.x == last.x) || (third.y == penul.y && penul.y == last.y) {
+			out = append(out, c)
+			continue
+		} else if (penul.x == last.x && last.x == c.x) || (penul.y == last.y && last.y == c.y) {
+			out = append(out, c)
+			continue
+		}
+		out = append(out, c)
 	}
+
 	return out
 }
 
@@ -173,6 +153,9 @@ func (ps *PipesSaver) Update() error {
 
 	for _, p := range ps.pipes {
 		moves := p.ValidMoves()
+		if len(moves) == 0 {
+			continue
+		}
 		ix := rand.Intn(len(moves))
 		p.AddCoord(moves[ix])
 	}
