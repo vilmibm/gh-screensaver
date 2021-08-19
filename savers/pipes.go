@@ -147,7 +147,18 @@ func randColor() tcell.Color {
 func (ps *PipesSaver) Update() error {
 	width, height := ps.screen.Size()
 	if rand.Intn(10) < 1 {
-		pipe := newPipe(width, height)
+		var pipe *pipe
+		for pipe == nil {
+			pipe = newPipe(width, height)
+			for _, p := range ps.pipes {
+				if p.coords[0].x == pipe.coords[0].x && p.coords[0].y == pipe.coords[0].y {
+					pipe = nil
+				} else {
+					break
+				}
+			}
+		}
+
 		ps.pipes = append(ps.pipes, pipe)
 	}
 
