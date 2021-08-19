@@ -12,6 +12,7 @@ type PipesSaver struct {
 	screen tcell.Screen
 	style  tcell.Style
 	color  bool
+	pipes  []*pipe
 	inputs map[string]string
 }
 
@@ -34,7 +35,6 @@ func (ps *PipesSaver) Initialize(opts shared.ScreensaverOpts) error {
 }
 
 func (fs *PipesSaver) Inputs() map[string]shared.SaverInput {
-	// TODO eventually support truecolor
 	return map[string]shared.SaverInput{
 		"color": {
 			Default:     "full",
@@ -61,24 +61,38 @@ type pipe struct {
 	color  tcell.Color
 }
 
-// TODO validMoves
+func newPipe(width, height int, color bool) *pipe {
+	p := &pipe{}
+	p.color = randColor()
+	// TODO select starting point
+	return p
+}
+
+// TODO ValidMoves
+// TODO AddCoord
 
 func randColor() tcell.Color {
-	r := rand.Intn(255)
-	g := rand.Intn(255)
-	b := rand.Intn(255)
+	r := rand.Int31n(255)
+	g := rand.Int31n(255)
+	b := rand.Int31n(255)
 
 	return tcell.NewRGBColor(r, g, b)
 }
 
 func (ps *PipesSaver) Update() error {
-	// TODO check new pipe chance
-	//       - random color
-	//       - random wall
-	//       - add to list
-	// TODO for each pipe,
-	//      - decide on next spot options based on proximity to wall
-	//      - pick random next spot
+	width, height = ps.screen.Size()
+	if rand.Intn(10) < 1 {
+		pipe := newPipe(width, height, ps.color)
+		ps.pipes = append(ps.pipes, pipe)
+	}
+
+	for _, p := range ps.pipes {
+		moves := p.ValidMoves()
+		// TODO pick random move
+		// TODO tell pipe about new move
+	}
+
+	// TODO draw the coords for each pipe
 
 	// TODO the OG pipes clears itself at some interval. I think it will take far
 	// more time for us to fill up a screen, so initially I think i'll just let
