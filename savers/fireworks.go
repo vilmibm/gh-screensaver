@@ -148,6 +148,47 @@ var trails = []func() *sprite{
 	bangTrail,
 }
 
+func tinyBoomer() *sprite {
+	return &sprite{
+		frames: []string{
+			`
+
+
+      .
+
+
+			`,
+			`
+
+      *
+
+      
+			`,
+			`
+
+     * *
+    * * *
+     * *
+      
+			`,
+			`
+    *   *
+        
+   *     *
+        
+    *   *
+			`,
+			`
+         
+            
+            
+           
+           
+			`,
+		},
+	}
+}
+
 func basicExplode() *sprite {
 	return &sprite{
 		frames: []string{
@@ -209,6 +250,11 @@ func basicExplode() *sprite {
 	}
 }
 
+var explosions = []func() *sprite{
+	tinyBoomer,
+	basicExplode,
+}
+
 var colors = []tcell.Color{
 	tcell.ColorBlue,
 	tcell.ColorCoral,
@@ -243,15 +289,15 @@ func newFirework(screen tcell.Screen, style tcell.Style) *firework {
 	width, height := screen.Size()
 	colorIx := rand.Intn(len(colors))
 	trailIx := rand.Intn(len(trails))
+	explosionIx := rand.Intn(len(explosions))
 	f := &firework{
-		screen:      screen,
-		style:       style,
-		x:           rand.Intn(width-5) + 5,
-		y:           height,
-		height:      rand.Intn(height - 8),
-		TrailSprite: trails[trailIx](),
-		// TODO randomize
-		ExplodeSprite: basicExplode(),
+		screen:        screen,
+		style:         style,
+		x:             rand.Intn(width-5) + 5,
+		y:             height,
+		height:        rand.Intn(height - 8),
+		TrailSprite:   trails[trailIx](),
+		ExplodeSprite: explosions[explosionIx](),
 		Color1:        colors[colorIx],
 		Color2:        lightColors[colorIx],
 	}
