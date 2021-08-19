@@ -250,9 +250,66 @@ func basicExplode() *sprite {
 	}
 }
 
+func sparkly() *sprite {
+	return &sprite{
+		frames: []string{
+			`
+
+     * *
+      *  *
+       *
+
+			`,
+			`
+        *
+       *
+    * *  *
+       *  *
+    *
+			`,
+			`
+  *    *   *
+     *   *
+    *  * *
+   *   *    *
+    *    *
+			`,
+			`
+  * *      *
+     *   *
+       *    *
+   *   *    *
+ *  *    *   *
+			`,
+			`
+    *    *  *
+     *     
+      *   * *
+   *   * *   
+ * *     *   *
+			`,
+			`
+    *    *   
+              
+      *     *
+               
+ *       *   *
+			`,
+			`
+                 
+              
+              
+               
+              
+			`,
+		},
+	}
+}
+
 var explosions = []func() *sprite{
 	tinyBoomer,
 	basicExplode,
+	sparkly,
 }
 
 var colors = []tcell.Color{
