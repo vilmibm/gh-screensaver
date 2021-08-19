@@ -51,7 +51,37 @@ func (ps *PipesSaver) SetInputs(inputs map[string]string) error {
 	return nil
 }
 
+type coord struct {
+	x int
+	y int
+}
+
+type pipe struct {
+	coords []coord
+	color  tcell.Color
+}
+
+// TODO validMoves
+
+func randColor() tcell.Color {
+	r := rand.Intn(255)
+	g := rand.Intn(255)
+	b := rand.Intn(255)
+
+	return tcell.NewRGBColor(r, g, b)
+}
+
 func (ps *PipesSaver) Update() error {
-	// TODO
+	// TODO check new pipe chance
+	//       - random color
+	//       - random wall
+	//       - add to list
+	// TODO for each pipe,
+	//      - decide on next spot options based on proximity to wall
+	//      - pick random next spot
+
+	// TODO the OG pipes clears itself at some interval. I think it will take far
+	// more time for us to fill up a screen, so initially I think i'll just let
+	// it fill up.
 	return nil
 }
