@@ -63,8 +63,7 @@ type pipe struct {
 	height int
 }
 
-func newPipe(width, height int, color bool) *pipe {
-	// TODO respect color bool
+func newPipe(width, height int) *pipe {
 	p := &pipe{
 		color:  randColor(),
 		width:  width,
@@ -91,7 +90,41 @@ func newPipe(width, height int, color bool) *pipe {
 }
 
 func (p *pipe) ValidMoves() []coord {
-	return []coord{}
+	last := p.coords[len(p.coords)-1]
+	penul := coord{-1, -1}
+	if len(p.coords) > 1 {
+		penul = p.coords[len(p.coords)-2]
+	}
+	out := []coord{}
+	if last.y > 0 {
+		y := last.y - 1
+		x := last.x
+		if x != penul.x && y != penul.y {
+			out = append(out, coord{last.x, last.y - 1})
+		}
+	}
+	if last.x < p.width {
+		x := last.x + 1
+		y := last.y
+		if x != penul.x && y != penul.y {
+			out = append(out, coord{last.x + 1, last.y})
+		}
+	}
+	if last.y < p.height {
+		x := last.x
+		y := last.y + 1
+		if x != penul.x && y != penul.y {
+			out = append(out, coord{last.x, last.y + 1})
+		}
+	}
+	if last.x > 0 {
+		x := last.x - 1
+		y := last.y
+		if x != penul.x && y != penul.y {
+			out = append(out, coord{last.x - 1, last.y})
+		}
+	}
+	return out
 }
 
 func (p *pipe) AddCoord(c coord) {
@@ -109,7 +142,7 @@ func randColor() tcell.Color {
 func (ps *PipesSaver) Update() error {
 	width, height := ps.screen.Size()
 	if rand.Intn(10) < 1 {
-		pipe := newPipe(width, height, ps.color)
+		pipe := newPipe(width, height)
 		ps.pipes = append(ps.pipes, pipe)
 	}
 
@@ -122,7 +155,11 @@ func (ps *PipesSaver) Update() error {
 	for _, p := range ps.pipes {
 		for _, c := range p.coords {
 			// TODO determine if it's a change in direction and use "*"
-			drawStr(ps.screen, c.x, c.y, ps.style, "#")
+			s := ps.style
+			if ps.color {
+				s = s.Foreground(p.color)
+			}
+			drawStr(ps.screen, c.x, c.y, s, "#")
 		}
 	}
 
