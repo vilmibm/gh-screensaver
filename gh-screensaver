@@ -1,12 +1,38 @@
 #!/bin/bash
+set -e
+
+extensionPath="$(dirname "$0")"
+arch="$(uname -m)"
+
+
+if uname -a | grep Msys > /dev/null; then
+  if [ $arch = "x86_64" ]; then
+    exec "${extensionPath}/builds/windows-x86_64" "$@"
+  elif [ $arch = "i686" ]; then
+    exec "${extensionPath}/builds/windows-i386" "$@"
+  elif [ $arch = "i386" ]; then
+    exec "${extensionPath}/builds/windows-i386" "$@"
+  fi
+elif uname -a | grep Darwin > /dev/null; then
+  if [ $arch = "x86_64" ]; then
+    exec "${extensionPath}/builds/darwin-x86_64" "$@"
+  fi
+elif uname -a | grep Linux > /dev/null; then
+  if [ $arch = "x86_64" ]; then
+    exec "${extensionPath}/builds/linux-x86_64" "$@"
+  elif [ $arch = "i686" ]; then
+    exec "${extensionPath}/builds/linux-i386" "$@"
+  elif [ $arch = "i386" ]; then
+    exec "${extensionPath}/builds/linux-i386" "$@"
+  fi
+fi
 
 if [ "$(which go)" = "" ]; then 
-	echo "go must be installed to use this gh extension"
+	echo "go must be installed to use this gh extension on this platform"
 	exit 1
 fi
 
 exe="cmd.out"
-extensionPath="$(dirname "$0")"
 
 cd "${extensionPath}" > /dev/null
 go build -o "${exe}"
