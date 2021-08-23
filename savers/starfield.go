@@ -28,8 +28,8 @@ type StarfieldSaver struct {
 
 	projMatrix [16]float64
 
-	speed    int
 	maxStars int
+	interval time.Duration
 
 	stars []*star
 }
@@ -51,13 +51,14 @@ func (s *StarfieldSaver) Initialize(opts shared.ScreensaverOpts) error {
 	s.width, s.height = s.screen.Size()
 
 	s.n = 0.1
-	s.f = 10
+	s.f = 10.0
 	s.fontAspect = 0.5
 	s.projAspect = float64(s.width) / float64(s.height) * s.fontAspect
 	s.theta = 45 * deg2rad
 
-	s.speed = 4
-	s.maxStars = 300
+	interval, _ := time.ParseDuration("1s")
+	s.interval = interval
+	s.maxStars = 10
 
 	s.projMatrix = [16]float64{
 		1.0 / math.Tan(s.theta*0.5) / s.projAspect,
@@ -77,9 +78,6 @@ func (s *StarfieldSaver) Initialize(opts shared.ScreensaverOpts) error {
 	}
 
 	rand.Seed(time.Now().UTC().UnixNano())
-
-	// TODO calcuate spawn area
-	//   - square like 10x10 roughly centered on screen
 
 	return nil
 }
@@ -127,17 +125,11 @@ func newStar(projAspect float64, f float64) *star {
 }
 
 func (s *StarfieldSaver) Update() error {
-	newStars := []*star{}
-	for _, st := range s.stars {
-		if !(st.vec[2] > -s.n || st.vec[2] < -s.f) {
-			newStars = append(newStars, st)
-		}
-		// TODO we are never deleting stars
-	}
-	s.stars = newStars
 	for len(s.stars) < s.maxStars {
 		s.stars = append(s.stars, newStar(s.projAspect, s.f))
 	}
+
+	starsNext := []*star{}
 
 	for _, st := range s.stars {
 		v := st.Project(s.projMatrix)
@@ -149,10 +141,16 @@ func (s *StarfieldSaver) Update() error {
 			c = "*"
 		}
 		x := int((st.vec[0] + 1) * 0.5 * float64(s.width))
-		y := int((-st.vec[1] + 1) * 0.5 * float64(s.height))
-		// TODO set light or dark color based on distance
-		drawStr(s.screen, x, y, s.style, c)
+		y := int((st.vec[1] + 1) * 0.5 * float64(s.height))
+		if x > 0 && x < s.width && y > 0 && y < s.height {
+			// TODO set light or dark color based on distance
+			drawStr(s.screen, x, y, s.style, c)
+			starsNext = append(starsNext, st)
+		}
+		time.Sleep(1)
 	}
+
+	s.stars = starsNext
 
 	// TODO wtf with the depth calculation
 
