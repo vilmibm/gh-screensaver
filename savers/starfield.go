@@ -29,6 +29,9 @@ func (s *StarfieldSaver) Initialize(opts shared.ScreensaverOpts) error {
 
 	rand.Seed(time.Now().UTC().UnixNano())
 
+	// TODO calcuate spawn area
+	//   - square like 10x10 roughly centered on screen
+
 	return nil
 }
 
@@ -42,5 +45,15 @@ func (s *StarfieldSaver) SetInputs(inputs map[string]string) error {
 }
 
 func (s *StarfieldSaver) Update() error {
+	// TODO star spawn chance
+	// TODO compute movement vector
+	// TODO spawn in random spot in spawn square
+
+	// TODO how to compute vector? don't overthink it
+
+	// TODO for each star
+	//        move along vector one unit
+	//        possibly change character based on proximity to wall
+	//        if moved beyond walls, delete
 	return nil
 }
