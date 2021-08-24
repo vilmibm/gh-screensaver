@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"os"
 	"strconv"
 	"time"
 
@@ -146,7 +145,6 @@ func newStar(projAspect float64, f float64) *star {
 
 func (s *StarfieldSaver) Update() error {
 	for len(s.stars) < s.maxStars {
-		fmt.Fprintln(os.Stderr, len(s.stars))
 		s.stars = append(s.stars, newStar(s.projAspect, s.f))
 	}
 
