@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -41,7 +42,9 @@ func runScreensaver(opts shared.ScreensaverOpts) error {
 	}
 	err = fs.Parse(opts.SaverArgs)
 	if err != nil {
-		return fmt.Errorf("could not parse input args: %w", err)
+		if !strings.Contains(err.Error(), "unknown flag") {
+			return fmt.Errorf("could not parse input args: %w", err)
+		}
 	}
 	for inputName := range saver.Inputs() {
 		providedValue, _ := fs.GetString(inputName)
@@ -98,7 +101,9 @@ func rootCmd() *cobra.Command {
 By default, runs a random screensaver.
 
 When selecting a specific screensaver with -s, some of them support 
-configuration options:
+configuration options that can be passed after --. For example:
+
+gh screensavver -smarquee --message="hello world" --font="script"
 
 marquee
   --message="custom message"
