@@ -94,6 +94,29 @@ func rootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "screensaver",
 		Short: "Watch a terminal saver animation",
+		Long: `
+By default, runs a random screensaver.
+
+When selecting a specific screensaver with -s, some of them support 
+configuration options:
+
+marquee
+  --message="custom message"
+  --font="script"
+
+  Fonts: banner, big, block, bubble, digital, ivrit, lean, mini, 
+         mnemonic, script, shadow, slant, small, smscript, smshadow, 
+         smslant, standard, term
+
+fireworks
+  --color can either be "full" of "off"
+
+starfield
+  --density is the maximum number of stars to draw (default 250)
+  --speed is the speed to fly through space (default 4)
+
+pipes
+  --color can either be "full" of "off"`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.SaverArgs = args
 			if opts.Repository == "" {
