@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -56,9 +57,6 @@ func (s *StarfieldSaver) Initialize(opts shared.ScreensaverOpts) error {
 	s.projAspect = float64(s.width) / float64(s.height) * s.fontAspect
 	s.theta = 45 * deg2rad
 
-	s.speed = 4.0
-	s.maxStars = 300
-
 	s.projMatrix = [16]float64{
 		1.0 / math.Tan(s.theta*0.5) / s.projAspect,
 		0, 0, 0,
@@ -82,10 +80,33 @@ func (s *StarfieldSaver) Initialize(opts shared.ScreensaverOpts) error {
 }
 
 func (s *StarfieldSaver) Inputs() map[string]shared.SaverInput {
-	return map[string]shared.SaverInput{}
+	return map[string]shared.SaverInput{
+		"speed": {
+			Default:     "4",
+			Description: "How fast to fly through space",
+		},
+		"density": {
+			Default:     "250",
+			Description: "Maximum number of stars to draw",
+		},
+	}
 }
 
 func (s *StarfieldSaver) SetInputs(inputs map[string]string) error {
+	speed, err := strconv.ParseFloat(inputs["speed"], 64)
+	if err != nil {
+		return fmt.Errorf("could not understand speed value: %w", err)
+	}
+
+	s.speed = speed
+
+	m, err := strconv.Atoi(inputs["density"])
+	if err != nil {
+		return fmt.Errorf("could not understand density value: %w", err)
+	}
+
+	s.maxStars = m
+
 	return nil
 }
 
