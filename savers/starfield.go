@@ -11,8 +11,6 @@ import (
 	"github.com/vilmibm/gh-screensaver/savers/shared"
 )
 
-// TODO try and adapt asciifield.c
-
 const deg2rad = math.Pi / 180.0
 
 type StarfieldSaver struct {
@@ -84,7 +82,6 @@ func (s *StarfieldSaver) Initialize(opts shared.ScreensaverOpts) error {
 }
 
 func (s *StarfieldSaver) Inputs() map[string]shared.SaverInput {
-	// TODO support rainbow mode
 	return map[string]shared.SaverInput{}
 }
 
@@ -127,15 +124,6 @@ func newStar(projAspect float64, f float64) *star {
 }
 
 func (s *StarfieldSaver) Update() error {
-	/*
-		newStars := []*star{}
-		for _, st := range s.stars {
-			if !(st.vec[2] > -s.n || st.vec[2] < -s.f) {
-				newStars = append(newStars, st)
-			}
-		}
-		s.stars = newStars
-	*/
 	for len(s.stars) < s.maxStars {
 		fmt.Fprintln(os.Stderr, len(s.stars))
 		s.stars = append(s.stars, newStar(s.projAspect, s.f))
@@ -146,18 +134,20 @@ func (s *StarfieldSaver) Update() error {
 	for _, st := range s.stars {
 		projected := st.Project(s.projMatrix)
 		distance := st.vec[0]*st.vec[0] + st.vec[1]*st.vec[1] + st.vec[2]*st.vec[2]
+		style := s.style
 		c := "#"
 		if distance > 50 {
+			style = style.Foreground(tcell.ColorDimGray)
 			c = "."
 		} else if distance > 20 {
+			style = style.Foreground(tcell.ColorLightGray)
 			c = "*"
 		}
 		x := int((projected[0] + 1) * 0.5 * float64(s.width))
 		y := int((-projected[1] + 1) * 0.5 * float64(s.height))
 
 		if x > 0 && x < s.width && y > 0 && y < s.width {
-			// TODO set light or dark color based on distance
-			drawStr(s.screen, x, y, s.style, c)
+			drawStr(s.screen, x, y, style, c)
 			// TODO WAG
 			stepsize := s.speed * .04
 			st.Step(stepsize)
@@ -166,8 +156,6 @@ func (s *StarfieldSaver) Update() error {
 	}
 
 	s.stars = next
-
-	// TODO wtf with the depth calculation
 
 	return nil
 }
