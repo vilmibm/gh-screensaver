@@ -33,6 +33,7 @@ func runScreensaver(opts shared.ScreensaverOpts) error {
 		return err
 	}
 
+	// TODO ignore unused parameters
 	providedInputs := map[string]string{}
 	fs := pflag.FlagSet{}
 	for inputName, input := range saver.Inputs() {
@@ -106,8 +107,8 @@ func rootCmd() *cobra.Command {
 				"fireworks": savers.NewFireworksSaver,
 				"pipes":     savers.NewPipesSaver,
 				"starfield": savers.NewStarfieldSaver,
+				"pollock":   savers.NewPollockSaver,
 				// TODO aquarium
-				// TODO running paint
 				// TODO noise
 				// TODO game of life
 				// TODO issues/pr float by?

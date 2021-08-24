@@ -11,6 +11,8 @@ import (
 	"github.com/vilmibm/gh-screensaver/savers/shared"
 )
 
+// Heavily inspired by https://www.uninformativ.de/git/asciifield/file/README.html
+
 const deg2rad = math.Pi / 180.0
 
 type StarfieldSaver struct {
