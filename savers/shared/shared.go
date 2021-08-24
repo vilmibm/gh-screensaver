@@ -12,6 +12,7 @@ type Screensaver interface {
 	SetInputs(map[string]string) error
 	Update() error
 	Inputs() map[string]SaverInput
+	Clear()
 }
 
 type SaverCreator func(ScreensaverOpts) (Screensaver, error)

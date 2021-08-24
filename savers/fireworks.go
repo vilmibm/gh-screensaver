@@ -28,6 +28,10 @@ func NewFireworksSaver(opts shared.ScreensaverOpts) (shared.Screensaver, error) 
 	return fs, nil
 }
 
+func (fs *FireworksSaver) Clear() {
+	fs.screen.Clear()
+}
+
 func (fs *FireworksSaver) Initialize(opts shared.ScreensaverOpts) error {
 	fs.screen = opts.Screen
 	fs.style = opts.Style

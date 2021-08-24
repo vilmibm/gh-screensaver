@@ -25,6 +25,10 @@ func NewPipesSaver(opts shared.ScreensaverOpts) (shared.Screensaver, error) {
 	return ps, nil
 }
 
+func (ps *PipesSaver) Clear() {
+	ps.screen.Clear()
+}
+
 func (ps *PipesSaver) Initialize(opts shared.ScreensaverOpts) error {
 	ps.screen = opts.Screen
 	ps.style = opts.Style
@@ -167,51 +171,6 @@ func (p *pipe) Next() {
 	p.coords = append(p.coords, next)
 }
 
-// TODO This was a foolish thing I did but I'm saving the code bc it is a cool
-// effect; going to put it in a "running paint" color blotch screensaver
-func (p *pipe) ValidMoves() []coord {
-	last := p.coords[len(p.coords)-1]
-	penul := coord{-1, -1}
-	third := coord{-1, -2}
-	if len(p.coords) > 1 {
-		penul = p.coords[len(p.coords)-2]
-	}
-	if len(p.coords) > 2 {
-		third = p.coords[len(p.coords)-3]
-	}
-	all := []coord{}
-	if last.y > 0 {
-		all = append(all, coord{last.x, last.y - 1})
-	}
-	if last.x < p.width {
-		all = append(all, coord{last.x + 1, last.y})
-	}
-	if last.y < p.height {
-		all = append(all, coord{last.x, last.y + 1})
-	}
-	if last.x > 0 {
-		all = append(all, coord{last.x - 1, last.y})
-	}
-	out := []coord{}
-	for _, c := range all {
-		// Is it the penultimate point? Want to prevent backtracking
-		if c.x == penul.x && c.y == penul.y {
-			continue
-		}
-
-		if (third.x == penul.x && penul.x == last.x) || (third.y == penul.y && penul.y == last.y) {
-			out = append(out, c)
-			continue
-		} else if (penul.x == last.x && last.x == c.x) || (penul.y == last.y && last.y == c.y) {
-			out = append(out, c)
-			continue
-		}
-		out = append(out, c)
-	}
-
-	return out
-}
-
 func (p *pipe) AddCoord(c coord) {
 	p.coords = append(p.coords, c)
 }
@@ -241,19 +200,6 @@ func (ps *PipesSaver) Update() error {
 
 		ps.pipes = append(ps.pipes, pipe)
 	}
-
-	/*
-		// TODO This was a foolish thing I did but I'm saving the code bc it is a cool
-		// effect; going to put it in a "running paint" color blotch screensaver
-				for _, p := range ps.pipes {
-					moves := p.ValidMoves()
-					if len(moves) == 0 {
-						continue
-					}
-					ix := rand.Intn(len(moves))
-					p.AddCoord(moves[ix])
-				}
-	*/
 
 	for _, p := range ps.pipes {
 		p.Next()

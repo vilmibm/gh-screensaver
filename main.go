@@ -76,7 +76,7 @@ loop:
 		case <-time.After(time.Millisecond * 100):
 		}
 
-		screen.Clear()
+		saver.Clear()
 		if err := saver.Update(); err != nil {
 			saverErr = err
 			break loop

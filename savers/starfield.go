@@ -46,6 +46,10 @@ func NewStarfieldSaver(opts shared.ScreensaverOpts) (shared.Screensaver, error) 
 	return s, nil
 }
 
+func (s *StarfieldSaver) Clear() {
+	s.screen.Clear()
+}
+
 func (s *StarfieldSaver) Initialize(opts shared.ScreensaverOpts) error {
 	s.screen = opts.Screen
 	s.style = opts.Style

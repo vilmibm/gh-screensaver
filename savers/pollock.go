@@ -34,6 +34,8 @@ func NewPollockSaver(opts shared.ScreensaverOpts) (shared.Screensaver, error) {
 // create a bounding box
 // for each square in the box, splat with a chance
 
+func (p *PollockSaver) Clear() {}
+
 func (p *PollockSaver) Initialize(opts shared.ScreensaverOpts) error {
 	p.screen = opts.Screen
 	p.style = opts.Style
@@ -53,45 +55,72 @@ func (p *PollockSaver) SetInputs(inputs map[string]string) error {
 	return nil
 }
 
+type paintCell struct {
+	x    int
+	y    int
+	char string
+}
+
 type splat struct {
-	x      int
-	y      int
-	width  int
-	height int
-	color  tcell.Color
-	cells  [][]string
+	color tcell.Color
+	cells []paintCell
 }
 
 func newSplat(width, height int) *splat {
 	s := &splat{
-		x:      rand.Intn(width),
-		y:      rand.Intn(height),
-		width:  rand.Intn(width / 2),
-		height: rand.Intn(width / 2),
-		color:  randColor(),
-		cells:  [][]string{},
+		color: randColor(),
 	}
-	for ix := 0; ix < s.width; ix++ {
-		s.cells = append(s.cells, []string{})
-		for iy := 0; iy < s.height; iy++ {
-			splat := rand.Intn(10)
-			if splat < 2 {
-				c := "#"
-				cChance := rand.Intn(10)
-				if cChance > 8 {
-					c = "+"
-				} else if cChance > 4 {
-					c = "*"
-				}
 
-				s.cells[ix] = append(s.cells[ix], c)
-			} else {
-				s.cells[ix] = append(s.cells[ix], " ")
-			}
-		}
+	c := "#"
+	cChance := rand.Intn(10)
+	if cChance > 8 {
+		c = "+"
+	} else if cChance > 4 {
+		c = "*"
 	}
+
+	cell := paintCell{
+		x:    rand.Intn(width),
+		y:    rand.Intn(height),
+		char: c,
+	}
+
+	s.cells = []paintCell{cell}
 
 	return s
+}
+
+func (s *splat) Spread(width, height int) {
+	last := s.cells[len(s.cells)-1]
+
+	all := []paintCell{}
+
+	if last.y > 0 {
+		all = append(all, paintCell{x: last.x, y: last.y - 1})
+	}
+	if last.x < width {
+		all = append(all, paintCell{x: last.x + 1, y: last.y})
+	}
+	if last.y < height {
+		all = append(all, paintCell{x: last.x, y: last.y + 1})
+	}
+	if last.x > 0 {
+		all = append(all, paintCell{x: last.x - 1, y: last.y})
+	}
+
+	if len(all) == 0 {
+		return
+	}
+
+	next := all[rand.Intn(len(all))]
+	next.char = "#"
+	cChance := rand.Intn(10)
+	if cChance > 8 {
+		next.char = "+"
+	} else if cChance > 4 {
+		next.char = "*"
+	}
+	s.cells = append(s.cells, next)
 }
 
 func (p *PollockSaver) Update() error {
@@ -106,16 +135,12 @@ func (p *PollockSaver) Update() error {
 	}
 
 	for _, splat := range p.splats {
-		ix := 0
-		for _, splatRow := range splat.cells {
-			iy := 0
-			for _, splatCell := range splatRow {
-				if splatCell != " " {
-					drawStr(p.screen, ix+splat.x, iy+splat.y, p.style.Foreground(splat.color), splatCell)
-				}
-				iy++
-			}
-			ix++
+		if rand.Intn(10) < 5 {
+			splat.Spread(p.width, p.height)
+		}
+
+		for _, cell := range splat.cells {
+			drawStr(p.screen, cell.x, cell.y, p.style.Foreground(splat.color), cell.char)
 		}
 	}
 

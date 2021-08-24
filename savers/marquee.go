@@ -50,6 +50,10 @@ func NewMarqueeSaver(opts shared.ScreensaverOpts) (shared.Screensaver, error) {
 	return bs, nil
 }
 
+func (bs *MarqueeSaver) Clear() {
+	bs.screen.Clear()
+}
+
 func (bs *MarqueeSaver) Inputs() map[string]shared.SaverInput {
 	// TODO list fonts in documentation
 	return map[string]shared.SaverInput{
