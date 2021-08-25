@@ -47,7 +47,7 @@ else
     mkdir -p bin
     rm -f "${extensionPath}/bin/*"
     gh release -R"${repo}" download "${tag}" -p "${exe}" --dir="${extensionPath}/bin"
-    chmod +x "${extensionPath}/bin/*"
+    chmod +x "${extensionPath}/bin/${exe}"
   fi
 fi
 
