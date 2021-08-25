@@ -1,6 +1,7 @@
 *-x86_64
 *-i386
 dist
+bin
 
 # Binaries for programs and plugins
 *.exe
