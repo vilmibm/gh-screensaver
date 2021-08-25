@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+tag="v1.0.0"
+
 extensionPath="$(dirname "$0")"
 arch="$(uname -m)"
 
@@ -42,7 +44,7 @@ if [ "${exe}" == "" ]; then
 else
   if [[ ! -x "${extensionPath}/${exe}" ]]; then
     rm -f "${extensionPath}/${exe}"
-    gh release download -p "${exe}" --dir="${extensionPath}"
+    gh release download "${tag}" -p "${exe}" --dir="${extensionPath}"
     chmod +x "${extensionPath}/${exe}"
   fi
 fi
