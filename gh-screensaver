@@ -44,7 +44,7 @@ if [ "${exe}" == "" ]; then
 else
   if [[ ! -x "${extensionPath}/${exe}" ]]; then
     rm -f "${extensionPath}/${exe}"
-    gh release download "${tag}" -p "${exe}" --dir="${extensionPath}"
+    gh release -Rvilmibm/gh-screensaver download "${tag}" -p "${exe}" --dir="${extensionPath}"
     chmod +x "${extensionPath}/${exe}"
   fi
 fi
