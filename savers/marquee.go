@@ -55,7 +55,6 @@ func (bs *MarqueeSaver) Clear() {
 }
 
 func (bs *MarqueeSaver) Inputs() map[string]shared.SaverInput {
-	// TODO list fonts in documentation
 	return map[string]shared.SaverInput{
 		"font": {
 			Default:     "slant",

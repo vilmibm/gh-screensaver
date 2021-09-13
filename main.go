@@ -109,9 +109,9 @@ marquee
   --message="custom message"
   --font="script"
 
-  Fonts: banner, big, block, bubble, digital, ivrit, lean, mini, 
-         mnemonic, script, shadow, slant, small, smscript, smshadow, 
-         smslant, standard, term
+  Fonts: banner, big, block, bubble, digital, lean, mini, mnemonic,
+         script, shadow, slant, small, smscript, smshadow, smslant,
+         standard, term
 
 fireworks
   --color can either be "full" of "off"
