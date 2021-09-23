@@ -103,7 +103,7 @@ By default, runs a random screensaver.
 When selecting a specific screensaver with -s, some of them support 
 configuration options that can be passed after --. For example:
 
-gh screensaver -smarquee --message="hello world" --font="script"
+gh screensaver -smarquee -- --message="hello world" --font="script"
 
 marquee
   --message="custom message"
