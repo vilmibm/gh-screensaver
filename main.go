@@ -18,6 +18,11 @@ func runScreensaver(opts shared.ScreensaverOpts) error {
 	style := tcell.StyleDefault
 	opts.Style = style
 
+	saverInit, ok := opts.Savers[opts.Screensaver]
+	if !ok {
+		return fmt.Errorf("no such screensaver '%s'; run gh screensaver -l to see choices", opts.Screensaver)
+	}
+
 	screen, err := tcell.NewScreen()
 	if err != nil {
 		return err
@@ -29,7 +34,7 @@ func runScreensaver(opts shared.ScreensaverOpts) error {
 
 	opts.Screen = screen
 
-	saver, err := opts.Savers[opts.Screensaver](opts)
+	saver, err := saverInit(opts)
 	if err != nil {
 		return err
 	}
@@ -182,7 +187,6 @@ func main() {
 	rc := rootCmd()
 
 	if err := rc.Execute(); err != nil {
-		fmt.Fprintf(os.Stderr, "%s\n", err)
 		os.Exit(1)
 	}
 }
