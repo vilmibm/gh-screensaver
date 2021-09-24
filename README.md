@@ -28,6 +28,8 @@ watch a fireworks display.
 
 fly through space.
 
+![starfield](https://user-images.githubusercontent.com/98482/134737341-701d0e7d-476f-4a29-8309-d34b4935c6a3.gif)
+
 `--density` Default `250`. The number of stars to render.
 `--speed` Default `4`. Higher is faster.
 
