@@ -37,6 +37,8 @@ fly through space.
 
 2d pipes draw across the screen.
 
+![pipes2](https://user-images.githubusercontent.com/98482/134737439-34967494-7742-4c55-b92c-da17d6f9f5a9.gif)
+
 `--color` `full` or `off`. Default `full`
 
 ### pollock
