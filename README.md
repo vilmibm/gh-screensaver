@@ -20,6 +20,8 @@ gh screensaver -smarquee -- --message="hello world" --font="script"
 
 watch a fireworks display.
 
+![fwork2](https://user-images.githubusercontent.com/98482/134737299-aa306b69-ceb4-49c1-95c8-3582d195250c.gif)
+
 `--color` `full` or `off`. Default `full`
 
 ### starfield
