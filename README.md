@@ -2,6 +2,12 @@
 
 _being a gh extension that runs animated terminal "screensavers"_
 
+## installation
+
+```
+gh extension install vilmibm/gh-screensaver
+```
+
 ## usage
 
 - `gh screensaver` run a random screensaver
