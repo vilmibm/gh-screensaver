@@ -141,9 +141,9 @@ pipes
 				"pipes":     savers.NewPipesSaver,
 				"starfield": savers.NewStarfieldSaver,
 				"pollock":   savers.NewPollockSaver,
+				"life":      savers.NewLifeSaver,
 				// TODO aquarium
 				// TODO noise
-				// TODO game of life
 				// TODO issues/pr float by?
 			}
 			if opts.Screensaver == "" {
