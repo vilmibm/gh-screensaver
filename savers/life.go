@@ -1,6 +1,7 @@
 package savers
 
 import (
+	"errors"
 	"math/rand"
 	"strings"
 	"time"
@@ -9,7 +10,7 @@ import (
 	"github.com/vilmibm/gh-screensaver/savers/shared"
 )
 
-var seeds = []string{"dragon", "gun", "noise", "r", "pulsar"}
+var seeds = []string{"dragon", "gun", "noise", "r", "pulsar", "glider"}
 
 var aliveColorsBlue = []tcell.Color{
 	tcell.ColorDeepSkyBlue,
@@ -24,6 +25,11 @@ var aliveColorsGreen = []tcell.Color{
 var aliveColorsRed = []tcell.Color{
 	tcell.ColorYellow,
 	tcell.ColorRed,
+}
+
+var aliveColorsWhite = []tcell.Color{
+	tcell.ColorWhite,
+	tcell.ColorGold,
 }
 
 type LifeSaver struct {
@@ -82,28 +88,36 @@ func (lf *LifeSaver) Inputs() map[string]shared.SaverInput {
 func (lf *LifeSaver) SetInputs(inputs map[string]string) error {
 	lf.useColor = inputs["color"] == "full"
 	seed := strings.ToLower(inputs["seed"])
+	if seed == "rand" {
+		idx := rand.Intn(len(seeds))
+		seed = seeds[idx]
+	}
 
 	// default to noise if terminal is too small
+	defaultSeed := "noise"
 	switch seed {
+	case "gun":
+		if lf.width < 50 || lf.height < 42 {
+			seed = defaultSeed
+		}
 	case "pulsar":
 		if lf.width < 40 || lf.height < 40 {
-			seed = "noise"
-		}
-	case "gun":
-		if lf.width < 38 || lf.height < 10 {
-			seed = "noise"
+			seed = defaultSeed
 		}
 	case "dragon":
 		if lf.width < 26 || lf.height < 30 {
-			seed = "noise"
+			seed = defaultSeed
 		}
 	case "r":
-		break
-	case "rand":
-		idx := rand.Intn(len(seeds))
-		seed = seeds[idx]
+		if lf.width < 15 || lf.height < 15 {
+			seed = defaultSeed
+		}
+	case "glider":
+		if lf.width < 10 || lf.height < 10 {
+			seed = defaultSeed
+		}
 	default:
-		seed = "noise"
+		seed = defaultSeed
 	}
 	err := lf.initState(seed)
 	if err != nil {
@@ -122,7 +136,7 @@ func (lf *LifeSaver) initState(seed string) error {
 		// some oscillators
 		for i := 0; i < 37; i++ {
 			for j := 0; j < 37; j++ {
-				lf.aliveCells[j+hX-15][i+hY-15] = pulsar[i][j]
+				lf.aliveCells[j+hX-15][i+hY-17] = pulsar[i][j]
 			}
 		}
 
@@ -180,7 +194,21 @@ func (lf *LifeSaver) initState(seed string) error {
 			}
 		}
 		lf.colors = aliveColorsBlue
+	case "glider":
+		//glider fleet
+		for k := 2; k+3 < lf.width; k += 15 {
+			h := rand.Intn(lf.height)
+			for i := 0; i < 3; i++ {
+				for j := 0; j < 3; j++ {
+					lf.aliveCells[k+i][(j+h+lf.height)%lf.height] = glider[i][j]
+				}
+			}
+		}
+		lf.colors = aliveColorsWhite
+	default:
+		return errors.New("Error initiliazing seed")
 	}
+
 	return nil
 }
 

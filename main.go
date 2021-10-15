@@ -131,7 +131,7 @@ pipes
 life
   --seed is the starting state. (default random)
 
-  Seeds: R, dragon, pulsar, gun, noise`,
+  Seeds: gilder, R, dragon, pulsar, gun, noise`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.SaverArgs = args
 			if opts.Repository == "" {
