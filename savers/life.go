@@ -1,16 +1,29 @@
 package savers
 
 import (
+	"math/rand"
+	"strings"
+	"time"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/vilmibm/gh-screensaver/savers/shared"
 )
 
-var nbrX = []int{1, -1, 0, 1, -1, 0, 1, -1}
-var nbrY = []int{0, 0, -1, -1, -1, 1, 1, 1}
+var seeds = []string{"dragon", "gun", "noise", "r", "pulsar"}
 
 var aliveColorsBlue = []tcell.Color{
 	tcell.ColorDeepSkyBlue,
 	tcell.ColorBlue,
+}
+
+var aliveColorsGreen = []tcell.Color{
+	tcell.ColorGreen,
+	tcell.ColorGoldenrod,
+}
+
+var aliveColorsRed = []tcell.Color{
+	tcell.ColorYellow,
+	tcell.ColorRed,
 }
 
 type LifeSaver struct {
@@ -20,95 +33,180 @@ type LifeSaver struct {
 	width  int
 	height int
 
-	periodic   bool
+	useColor   bool
 	colors     []tcell.Color
 	aliveCells [][]int
 }
 
 func NewLifeSaver(opts shared.ScreensaverOpts) (shared.Screensaver, error) {
-	p := &LifeSaver{colors: aliveColorsBlue}
-
-	if err := p.Initialize(opts); err != nil {
+	lf := &LifeSaver{}
+	if err := lf.Initialize(opts); err != nil {
 		return nil, err
 	}
 
-	p.aliveCells = make([][]int, p.width)
-	for i := range p.aliveCells {
-		p.aliveCells[i] = make([]int, p.height)
+	lf.aliveCells = make([][]int, lf.width)
+	for i := range lf.aliveCells {
+		lf.aliveCells[i] = make([]int, lf.height)
 	}
 
-	//for i := 0; i < p.width; i++ {
-	//for j := 0; j < p.height; j++ {
-	//r := rand.Intn(15)
-	//if r < 2 {
-	//p.aliveCells[i][j] = 1
-	//}
-	//}
-	//}
+	return lf, nil
+}
 
-	// two R-pentominos
+func (lf *LifeSaver) Clear() {
+	lf.screen.Clear()
+}
 
-	//tX := p.width / 3
-	//hY := p.height / 2
-	//for i := 0; i < 3; i++ {
-	//for j := 0; j < 3; j++ {
-	//p.aliveCells[tX+i][hY+j] = rPentomino[j][i]
-	//p.aliveCells[2*tX+i][hY+j] = rPentomino[i][j]
-	//}
-	//}
+func (lf *LifeSaver) Initialize(opts shared.ScreensaverOpts) error {
+	lf.screen = opts.Screen
+	lf.style = opts.Style
+	lf.width, lf.height = lf.screen.Size()
 
-	// colliding glider guns!!!
-	for i := 0; i < 36; i++ {
-		for j := 0; j < 9; j++ {
-			p.aliveCells[10+j][5+i] = glidergun[i][j]
-			p.aliveCells[p.width-20+j][5+i] = glidergun[i][9-j-1]
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	return nil
+}
+
+func (lf *LifeSaver) Inputs() map[string]shared.SaverInput {
+	return map[string]shared.SaverInput{
+		"seed": {
+			Default:     "rand",
+			Description: "seed state. Values: dragon, gun, R, pulsar, noise",
+		},
+		"color": {
+			Default:     "full",
+			Description: "whether to use full color or monochrome. Values: full, off",
+		},
+	}
+}
+
+func (lf *LifeSaver) SetInputs(inputs map[string]string) error {
+	lf.useColor = inputs["color"] == "full"
+	seed := strings.ToLower(inputs["seed"])
+
+	// default to noise if terminal is too small
+	switch seed {
+	case "pulsar":
+		if lf.width < 40 || lf.height < 40 {
+			seed = "noise"
 		}
+	case "gun":
+		if lf.width < 38 || lf.height < 10 {
+			seed = "noise"
+		}
+	case "dragon":
+		if lf.width < 26 || lf.height < 30 {
+			seed = "noise"
+		}
+	case "r":
+		break
+	case "rand":
+		idx := rand.Intn(len(seeds))
+		seed = seeds[idx]
+	default:
+		seed = "noise"
 	}
-
-	return p, nil
-}
-
-func (p *LifeSaver) Clear() {}
-
-func (p *LifeSaver) Initialize(opts shared.ScreensaverOpts) error {
-	p.screen = opts.Screen
-	p.style = opts.Style
-	p.width, p.height = p.screen.Size()
-
+	err := lf.initState(seed)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (p *LifeSaver) Inputs() map[string]shared.SaverInput {
-	return map[string]shared.SaverInput{}
-}
+func (lf *LifeSaver) initState(seed string) error {
+	tX := lf.width / 3
+	tY := lf.height / 3
+	hX := lf.width / 2
+	hY := lf.height / 2
+	switch seed {
+	case "pulsar":
+		// some oscillators
+		for i := 0; i < 37; i++ {
+			for j := 0; j < 37; j++ {
+				lf.aliveCells[j+hX-15][i+hY-15] = pulsar[i][j]
+			}
+		}
 
-func (p *LifeSaver) SetInputs(inputs map[string]string) error {
+		if hX/2 > 10 {
+			for i := 0; i < 3; i++ {
+				for j := 0; j < 8; j++ {
+					lf.aliveCells[i+hX/2][j+hY] = pentadec[i][j]
+					lf.aliveCells[i+3*hX/2][j+hY] = pentadec[i][j]
+				}
+			}
+		}
+		lf.colors = aliveColorsRed
+	case "gun":
+		// colliding glider guns!!!
+		for i := 0; i < 36; i++ {
+			for j := 0; j < 9; j++ {
+				lf.aliveCells[5+j][5+i] = glidergun[i][j]
+				lf.aliveCells[lf.width-10+j][5+i] = glidergun[i][8-j]
+			}
+		}
+		lf.colors = aliveColorsBlue
+	case "dragon":
+		// there be dragons
+		for n := 5; n+20 < lf.width; n += 27 {
+			for i := 0; i < 18; i++ {
+				for j := 0; j < 29; j++ {
+					if n%2 == 0 {
+						lf.aliveCells[i+n][(j+2*n*tY)%lf.height] = dragon[i][j]
+					} else {
+						lf.aliveCells[i+n][(j+n*tY)%lf.height] = dragon[i][28-j]
+					}
+				}
+			}
+		}
+
+		lf.colors = aliveColorsGreen
+	case "r":
+		//R-pentominos - chaotic
+		for i := 0; i < 3; i++ {
+			for j := 0; j < 3; j++ {
+				lf.aliveCells[tX+i][hY+j] = rPentomino[j][i]
+				lf.aliveCells[2*tX+i][hY+j] = rPentomino[i][j]
+			}
+		}
+		lf.colors = aliveColorsRed
+	case "noise":
+		//random noise seed
+		for i := 0; i < lf.width; i++ {
+			for j := 0; j < lf.height; j++ {
+				if rand.Intn(10) < 2 {
+					lf.aliveCells[i][j] = 1
+				} else {
+					lf.aliveCells[i][j] = 0
+				}
+			}
+		}
+		lf.colors = aliveColorsBlue
+	}
 	return nil
 }
 
-func (p *LifeSaver) isOnGrid(x, y int) bool {
-	return x >= 0 && y >= 0 && x < p.width && y < p.height
+func (lf *LifeSaver) isOnGrid(x, y int) bool {
+	return x >= 0 && y >= 0 && x < lf.width && y < lf.height
 }
 
-func (p *LifeSaver) Update() error {
-	for i := 0; i < p.width; i++ {
-		for j := 0; j < p.height; j++ {
-			if p.aliveCells[i][j] > 0 {
+func (lf *LifeSaver) Update() error {
+	for i := 0; i < lf.width; i++ {
+		for j := 0; j < lf.height; j++ {
+			if lf.aliveCells[i][j] > 0 {
 				// cell is alive
 				for k := 0; k < 8; k++ {
-					ni := (i + nbrX[k] + p.width) % p.width
-					nj := (j + nbrY[k] + p.height) % p.height
-					if p.aliveCells[ni][nj] > 0 {
-						p.aliveCells[i][j]++
+					ni := (i + nbrX[k] + lf.width) % lf.width
+					nj := (j + nbrY[k] + lf.height) % lf.height
+					if lf.aliveCells[ni][nj] > 0 {
+						lf.aliveCells[i][j]++
 					}
 				}
 			} else {
 				// cell is dead
 				for k := 0; k < 8; k++ {
-					ni := (i + nbrX[k] + p.width) % p.width
-					nj := (j + nbrY[k] + p.height) % p.height
-					if p.aliveCells[ni][nj] > 0 {
-						p.aliveCells[i][j]--
+					ni := (i + nbrX[k] + lf.width) % lf.width
+					nj := (j + nbrY[k] + lf.height) % lf.height
+					if lf.aliveCells[ni][nj] > 0 {
+						lf.aliveCells[i][j]--
 					}
 				}
 			}
@@ -116,25 +214,36 @@ func (p *LifeSaver) Update() error {
 	}
 
 	// next generation
-	for i := 0; i < p.width; i++ {
-		for j := 0; j < p.height; j++ {
-			n := p.aliveCells[i][j]
+	for i := 0; i < lf.width; i++ {
+		for j := 0; j < lf.height; j++ {
+			n := lf.aliveCells[i][j]
 			switch {
 			case n == -3 || n == 3:
-				drawStr(p.screen, i, j, p.style.Foreground(p.colors[0]), "*")
-				p.aliveCells[i][j] = 1
+				if lf.useColor {
+					drawStr(lf.screen, i, j, lf.style.Foreground(lf.colors[0]), "*")
+				} else {
+					drawStr(lf.screen, i, j, lf.style, "*")
+				}
+				lf.aliveCells[i][j] = 1
 			case n == 4:
-				drawStr(p.screen, i, j, p.style.Foreground(p.colors[1]), "#")
-				p.aliveCells[i][j] = 1
+				if lf.useColor {
+					drawStr(lf.screen, i, j, lf.style.Foreground(lf.colors[1]), "#")
+				} else {
+					drawStr(lf.screen, i, j, lf.style, "*")
+				}
+				lf.aliveCells[i][j] = 1
 			default:
-				p.aliveCells[i][j] = 0
-				drawStr(p.screen, i, j, p.style, " ")
+				lf.aliveCells[i][j] = 0
+				drawStr(lf.screen, i, j, lf.style, " ")
 			}
 		}
 	}
 
 	return nil
 }
+
+var nbrX = []int{1, -1, 0, 1, -1, 0, 1, -1}
+var nbrY = []int{0, 0, -1, -1, -1, 1, 1, 1}
 
 var rPentomino = [3][3]int{
 	{0, 1, 0},
@@ -145,6 +254,11 @@ var glider = [3][3]int{
 	{1, 0, 0},
 	{1, 0, 1},
 	{1, 1, 0}}
+
+var pentadec = [3][8]int{
+	{1, 1, 1, 1, 1, 1, 1, 1},
+	{1, 0, 1, 1, 1, 1, 0, 1},
+	{1, 1, 1, 1, 1, 1, 1, 1}}
 
 var glidergun = [36][9]int{
 	{0, 0, 0, 0, 1, 1, 0, 0, 0},
@@ -183,3 +297,62 @@ var glidergun = [36][9]int{
 	{0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{0, 0, 1, 1, 0, 0, 0, 0, 0},
 	{0, 0, 1, 1, 0, 0, 0, 0, 0}}
+
+var dragon = [18][29]int{
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0},
+	{0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
+	{1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1},
+	{1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0},
+	{1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0},
+	{0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+	{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+	{1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0},
+	{1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0},
+	{1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1},
+	{0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+
+var pulsar = [37][37]int{
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0},
+	{0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0},
+	{0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
+	{0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0},
+	{0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0},
+	{1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1},
+	{0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0},
+	{0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0},
+	{0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0},
+	{0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0},
+	{0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
