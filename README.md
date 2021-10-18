@@ -53,6 +53,14 @@ paint splotches cover the screen.
 
 ![pollock](https://user-images.githubusercontent.com/98482/134737473-b5a6a046-58e2-4471-b3c6-3ee191a47af6.gif)
 
+### life
+game of life.  
+
+![r-pentomino](https://i.imgur.com/Qq3c0N1.gif)
+![dragon](https://media.giphy.com/media/PwIywr183ioixLHqHX/giphy.gif)
+
+`--seed` `glider`,`noise`,`R`,`dragon`,`gun`,or `pulsar`. Default random.  
+`--color` `full` or `off`. Default `full`
 ## author
 
 nate smith <vilmibm@github.com>
