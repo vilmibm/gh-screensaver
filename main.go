@@ -126,7 +126,12 @@ starfield
   --speed is the speed to fly through space (default 4)
 
 pipes
-  --color can either be "full" of "off"`,
+  --color can either be "full" of "off"
+
+life
+  --seed is the starting state. (default random)
+
+  Seeds: gilder, R, dragon, pulsar, gun, noise`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.SaverArgs = args
 			if opts.Repository == "" {
@@ -141,9 +146,9 @@ pipes
 				"pipes":     savers.NewPipesSaver,
 				"starfield": savers.NewStarfieldSaver,
 				"pollock":   savers.NewPollockSaver,
+				"life":      savers.NewLifeSaver,
 				// TODO aquarium
 				// TODO noise
-				// TODO game of life
 				// TODO issues/pr float by?
 			}
 			if opts.Screensaver == "" {
