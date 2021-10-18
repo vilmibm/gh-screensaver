@@ -2,7 +2,7 @@
 set -e
 
 repo="vilmibm/gh-screensaver"
-tag="v1.0.4"
+tag="v1.1.0"
 
 extensionPath="$(dirname "$0")"
 arch="$(uname -m)"
