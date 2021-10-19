@@ -61,6 +61,9 @@ game of life.
 
 `--seed` `glider`,`noise`,`R`,`dragon`,`gun`,or `pulsar`. Default random.  
 `--color` `full` or `off`. Default `full`
+
+contributed by @meiji163
+
 ## author
 
 nate smith <vilmibm@github.com>
