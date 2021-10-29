@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 # TODO ARM support. figure out mapping to uname -m output.
