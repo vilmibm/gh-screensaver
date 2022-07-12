@@ -165,7 +165,7 @@ life
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Repository to contribute to")
+	cmd.Flags().StringVarP(&opts.Repository, "repo", "R", "", "Run in the context of a repo. Currently unused.")
 	cmd.Flags().StringVarP(&opts.Screensaver, "saver", "s", "", "Screensaver to play")
 	cmd.Flags().BoolVarP(&opts.List, "list", "l", false, "List available screensavers and exit")
 
